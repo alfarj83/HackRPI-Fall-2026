@@ -17,7 +17,7 @@ grantButton.addEventListener("click", async () => {
     stream.getTracks().forEach(track => track.stop());
 
     statusElement.textContent =
-      "Camera permission granted! You can return to EyeEase.";
+      "Camera permission granted! You can return to Head in the Clouds.";
 
   } catch (error) {
     console.error("Camera permission error:", error);
