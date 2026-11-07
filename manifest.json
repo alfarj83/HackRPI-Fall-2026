@@ -1,13 +1,10 @@
 {
-  "name": "Head in the Clouds",
-  "description": "Extension for reducing eye strain",
-  "version": "1.0",
   "manifest_version": 3,
-  "action": {
-    "default_popup": "index.html",
-    "default_icon": "hello_extensions.png"
-  },
-    "content_security_policy": {
+  "name": "EyeEase Attention Prototype",
+  "version": "0.1.0",
+  "description": "Local, calibrated screen-direction estimate using MediaPipe Face Landmarker.",
+  "action": {"default_popup": "popup.html"},
+  "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
 }

@@ -1,0 +1,1 @@
+MediaPipe vendor file goes here after running setup-assets

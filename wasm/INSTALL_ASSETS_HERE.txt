@@ -1,0 +1,1 @@
+MediaPipe WASM files go here after running setup-assets

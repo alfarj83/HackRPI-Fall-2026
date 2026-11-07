@@ -1,0 +1,12 @@
+EyeEase Attention Tracker — Chrome Extension
+
+1. Extract the ZIP to a normal folder (do not load Chrome from inside the ZIP).
+2. In PowerShell, open that folder and run:
+   powershell -ExecutionPolicy Bypass -File .\setup-assets.ps1
+   Or on macOS/Linux: bash setup-assets.sh
+3. Open chrome://extensions, enable Developer mode, click Load unpacked,
+   and choose this extracted folder (the folder containing manifest.json).
+4. Click EyeEase > Open eye tracker > Start camera > Calibrate.
+
+Note: MediaPipe model and WASM dependencies are downloaded by the setup script.
+The heuristic is experimental and cannot determine actual attention with certainty.
