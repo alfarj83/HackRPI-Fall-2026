@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "EyeEase Attention Prototype",
+  "name": "Head in the Clouds",
   "version": "0.1.0",
   "description": "Local, calibrated screen-direction estimate using MediaPipe Face Landmarker.",
   "action": {"default_popup": "popup.html"},
