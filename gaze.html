@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EyeEase Gaze Tracking</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      text-align: center;
+    }
+
+    #gaze-status {
+      font-size: 20px;
+      margin: 20px;
+    }
+
+    #gaze-dot {
+      position: fixed;
+      width: 18px;
+      height: 18px;
+      background: red;
+      border-radius: 50%;
+      pointer-events: none;
+      display: none;
+      z-index: 1000;
+      transform: translate(-50%, -50%);
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 8px;
+    }
+
+    #calibration {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      height: 65vh;
+      justify-items: center;
+      align-items: center;
+    }
+
+    .point {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: #2563eb;
+      border: 0;
+      color: white;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>EyeEase Eye Tracking</h1>
+
+  <button id="start">Start Tracking</button>
+  <button id="stop" disabled>Stop Tracking</button>
+
+  <p id="gaze-status">Not tracking</p>
+  <p id="coordinates">X: -- | Y: --</p>
+
+  <h3>Calibration</h3>
+  <p>
+    Look at each blue dot and click it five times.
+  </p>
+
+  <div id="calibration"></div>
+  <div id="gaze-dot"></div>
+
+  <script src="vendor/webgazer.min.js"></script>
+  <script src="gaze.js"></script>
+</body>
+</html>

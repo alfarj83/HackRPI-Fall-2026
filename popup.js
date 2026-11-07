@@ -11,6 +11,13 @@ document.getElementById("request-permission")
 
   });
 
+document.getElementById("open-gaze")
+  .addEventListener("click", () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL("gaze.html")
+    });
+  });
+
 let stream = null;
 
 async function checkCameraPermission() {
