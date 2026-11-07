@@ -30,6 +30,7 @@ export class AttentionDetector {
     const leftIris = landmarks[473];
 
     function relativeIrisPosition(iris, a, b) {
+    console.log(iris, a, b);
       const minX = Math.min(a.x, b.x);
       const maxX = Math.max(a.x, b.x);
 
