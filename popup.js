@@ -226,11 +226,11 @@ async function startTracking() {
 
     stopButton.disabled = false;
     calibrateButton.disabled = false;
-    status.textContent = "Tracking active";
+    statusElement.textContent = "Tracking active";
 
     detectLoop();
   } catch (error) {
-    status.textContent = `Error: ${error.message}`;
+    statusElement.textContent = `Error: ${error.message}`;
     stopTracking(false);
   } finally {
     starting = false;
@@ -259,7 +259,7 @@ function stopTracking(updateStatus = true) {
   calibrateButton.disabled = true;
 
   if (updateStatus) {
-    status.textContent = "Tracking stopped";
+    statusElement.textContent = "Tracking stopped";
   }
 
   updateAttention("unknown");
