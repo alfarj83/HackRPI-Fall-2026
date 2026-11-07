@@ -103,6 +103,32 @@ export default function App() {
           ↺ Reset
         </button>
       </div>
+      
+      <button
+        className="overlay-button"
+        onClick={async () => {
+          try {
+            const [tab] = await chrome.tabs.query({
+              active: true,
+              currentWindow: true
+            });
+
+            if (!tab?.id) return;
+
+            await chrome.scripting.executeScript({
+              target: { tabId: tab.id },
+              files: ["overlay.js"]
+            });
+
+            window.close();
+          } catch (error) {
+            console.error("Could not open cloud overlay:", error);
+            alert("Open a regular website and try again.");
+          }
+        }}
+      >
+        ☁️ Take a Cloud Break
+      </button>
 
       <p className="footer">Stay focused. One session at a time.</p>
     </div>

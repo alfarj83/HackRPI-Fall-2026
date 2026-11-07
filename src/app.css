@@ -122,3 +122,22 @@ button:hover {
   font-size: 11px;
   margin-top: 24px;
 }
+
+
+.overlay-button {
+  width: 100%;
+  margin-top: 20px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #8190ff;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.overlay-button:hover {
+  background: #a1adff;
+}
