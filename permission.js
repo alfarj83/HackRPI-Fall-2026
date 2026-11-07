@@ -1,4 +1,3 @@
-
 const grantButton = document.getElementById("grant");
 const statusElement = document.getElementById("status");
 
