@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Background darkness debug</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 16px; max-width: 720px; }
+    .stage { position: relative; width: 640px; height: 480px; background: #111; }
+    video, canvas#overlay { position: absolute; inset: 0; width: 640px; height: 480px; }
+    canvas#overlay { pointer-events: none; image-rendering: pixelated; }
+    #label { font-size: 28px; font-weight: 700; margin: 12px 0 4px; }
+    pre { background: #f4f4f4; padding: 8px; }
+    button { margin-right: 8px; }
+    #advice { padding: 10px 12px; border-radius: 6px; background: #eee; font-size: 18px; }
+    #advice[data-level="dark"] { background: #fde2e2; }
+    #advice[data-level="dim"] { background: #fff1cc; }
+    #advice[data-level="bright"] { background: #dff5e1; }
+  </style>
+</head>
+<body>
+  <h1>Background darkness</h1>
+  <p>
+    <button id="start">Start camera</button>
+    <button id="stop" disabled>Stop</button>
+    <button id="lock" disabled>Lock exposure</button>
+    <label><input type="checkbox" id="invert"> Invert mask (if your face is being measured)</label>
+  </p>
+  <div class="stage">
+    <video id="webcam" muted playsinline></video>
+    <canvas id="overlay"></canvas>
+  </div>
+  <div id="label">-</div>
+  <div id="advice"></div>
+  <pre id="stats"></pre>
+  <p id="status"></p>
+  <script type="module" src="./demo.js"></script>
+</body>
+</html>
