@@ -1,0 +1,10 @@
+{
+  "name": "Head in the Clouds",
+  "description": "Extension for reducing eye strain",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+    "default_popup": "front-end.js",
+    "default_icon": "hello_extensions.png"
+  }
+}
