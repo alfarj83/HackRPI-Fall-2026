@@ -29,9 +29,9 @@ body {
 }
 
 body.tracker.tracker-compact.wizard {
-  width: 380px;
-  min-width: 380px;
-  max-width: 380px;
+  width: 420px;
+  min-width: 420px;
+  max-width: 420px;
   height: 540px;
   max-height: 540px;
   overflow-x: hidden;
@@ -160,6 +160,13 @@ button:disabled {
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+.metrics {
+    max-width: 340px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
 }
 
 .wizard .hero-cloud img {
