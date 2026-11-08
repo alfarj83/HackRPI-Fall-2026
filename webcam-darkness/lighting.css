@@ -1,0 +1,30 @@
+#lighting { margin-top: 20px; }
+#light-label { font-size: 22px; font-weight: 700; margin: 4px 0; }
+#light-message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #eee;
+  color: #222;
+  font-size: 16px;
+}
+#light-message[data-level="dark"] { background: #fde2e2; }
+#light-message[data-level="bright"] { background: #dff5e1; }
+
+#notify-dialog {
+  max-width: 420px;
+  border: 0;
+  border-radius: 12px;
+  padding: 20px 22px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+#notify-dialog::backdrop { background: rgba(20, 30, 40, 0.45); }
+#notify-dialog h2 { margin-top: 0; }
+#notify-dialog button.secondary,
+button.secondary { background: #e5eaf0; color: #18212b; }
+#notify-result { min-height: 1.2em; }
+
+.light-chip { padding: 8px 12px; border-radius: 10px; background: #eee; color: #222; font-size: 13px; }
+.light-chip[data-level="dark"] { background: #fde2e2; }
+.light-chip[data-level="bright"] { background: #dff5e1; }
+.settings-card label { display: block; margin-top: 10px; font-weight: 600; font-size: 14px; }
+.settings-card input[type="number"] { width: 100px; padding: 6px 8px; border: 1px solid #9bb3c8; background: #fff; color: inherit; border-radius: 8px; font: inherit; }

@@ -289,6 +289,16 @@ async function loadModel() {
 
 }
 
+// The back arrow is only useful away from the home page, so it hides there (keeping its
+// space, so the gear stays on the right).
+function updateHomeArrow() {
+  $("home-nav").style.visibility = currentPage === homePage() ? "hidden" : "visible";
+  // In Settings the gear is replaced by the privacy info icon (same spot, top right).
+  const inSettings = currentPage === "settings";
+  $("settings-nav").hidden = inSettings;
+  $("info-nav").hidden = !inSettings;
+  if (!inSettings) setPrivacyOpen(false);
+}
 
 
 
