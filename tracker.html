@@ -1,70 +1,97 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EyeEase tracker</title><link rel="stylesheet" href="style.css"></head>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Head in the Clouds Guided Eye Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 <body class="tracker">
 <main>
-  <h1>Head in the Clouds — screen-direction tracker</h1>
-  <p>Position the webcam normally, click Start, then look at your usual screen-reading area and click Calibrate. All processing stays in this tab.</p>
+  <h1>Head in the Clouds — Eye Tracker</h1>
+  <p class="muted">Start your camera, then run the guided eye calibration. Calibrate at your usual viewing distance and monitor position.</p>
   <div class="buttons">
-    <button id="start">
-        Start camera
-    </button>
-
-    <button id="calibrate-screen" disabled>
-        Record: Looking at screen
-    </button>
-
-    <button id="calibrate-away" disabled>
-        Record: Looking away
-    </button>
-
-    <button id="stop" disabled>
-        Stop camera
-    </button>
+    <button id="start">Start camera</button>
+    <button id="guided-calibrate" disabled>Start guided calibration</button>
+    <button id="stop" disabled>Stop camera</button>
   </div>
   <p id="status" role="status">Camera off</p>
-  <div class="timers">
-    <div class="timer-card">
-        <span>Screen time</span>
-        <strong id="screen-timer">00:00</strong>
-        <small>Resets every 20 minutes</small>
-        <div class="timer-track">
-            <div id="screen-progress" class="timer-fill"></div>
-        </div>
-    </div>
+  
+  <div class="tracking-layout">
+      <!-- Camera preview -->
+      <div class="preview">
+          <video
+              id="webcam"
+              autoplay
+              playsinline
+              muted>
+          </video>
 
-    <div class="timer-card">
-        <span>Looking away</span>
-        <strong id="away-timer">00:00</strong>
-        <small>Resets every 20 seconds</small>
-        <div class="timer-track">
-            <div id="away-progress" class="timer-fill"></div>
-        </div>
-    </div>
+          <canvas id="overlay"></canvas>
+      </div>
+
+      <!-- Calibration instructions beside camera -->
+      <aside
+          id="calibration-panel"
+          class="calibration-panel"
+          hidden
+      >
+          <strong id="calibration-step">
+              Target 1 of 9
+          </strong>
+
+          <h2 id="calibration-mode">
+              Look at the center dot
+          </h2>
+
+          <p id="calibration-help">
+              Follow the calibration instructions.
+          </p>
+
+          <p id="calibration-progress">
+              Get ready
+          </p>
+
+          <button id="cancel-calibration">
+              Cancel calibration
+          </button>
+      </aside>
   </div>
-  <div class="preview">
-    <div class="camera-layer">
-      <video
-        id="webcam"
-        autoplay
-        muted
-        playsinline
-      ></video>
 
-      <canvas id="overlay"></canvas>
-    </div>
+  <div class="timers">
+    <div class="timer-card"><span>Screen time</span><strong id="screen-timer">00:00</strong><small>Resets every 20 minutes</small><div class="timer-track"><div id="screen-progress" class="timer-fill"></div></div></div>
+    <div class="timer-card"><span>Looking away</span><strong id="away-timer">00:00</strong><small>Resets every 20 seconds</small><div class="timer-track"><div id="away-progress" class="timer-fill"></div></div></div>
   </div>
   <h2 id="attention">Unknown</h2>
+  <p id="detail" class="muted">Start tracking to begin.</p>
   <div class="metrics">
-    <div><strong id="faces">0</strong><span>Faces</span></div>
-    <div><strong id="landmarks">0</strong><span>Landmarks</span></div>
-    <div><strong id="head-x">—</strong><span>Head offset X</span></div>
-    <div><strong id="head-y">—</strong><span>Head offset Y</span></div>
-    <div><strong id="gaze-x">—</strong><span>Iris ratio X</span></div>
-    <div><strong id="gaze-y">—</strong><span>Iris ratio Y</span></div>
-    <div><strong id="delta">—</strong><span>Deviation</span></div>
-    <div><strong id="progress">—</strong><span>Calibration</span></div>
+    <div><span>Faces</span><strong id="faces">0</strong></div>
+    <div><span>Landmarks</span><strong id="landmarks">0</strong></div>
+    <div><span>Head X</span><strong id="head-x">—</strong></div>
+    <div><span>Head Y</span><strong id="head-y">—</strong></div>
+    <div><span>Gaze X</span><strong id="gaze-x">—</strong></div>
+    <div><span>Gaze Y</span><strong id="gaze-y">—</strong></div>
+    <div><span>Calibration</span><strong id="progress">Needed</strong></div>
+    <div><span>Samples</span><strong id="delta">—</strong></div>
   </div>
-  <p id="detail" class="muted">No gaze estimate yet.</p>
-  <p class="muted">Experimental heuristic, not an accurate gaze tracker. Screen edges, glasses, camera angles and changes in seating can cause errors. A missing face means unknown, not looking away.</p>
+  <p class="muted">Tracking is an approximate camera-based screen-direction estimate. If your eyes are obscured or the pose was not included in calibration, the detector may report Unknown or Uncertain.</p>
 </main>
-<script type="module" src="tracker.js"></script></body></html>
+
+<!-- Full-window calibration target layer -->
+<div
+    id="calibration-overlay"
+    class="calibration-overlay"
+    hidden
+>
+    <div
+        id="calibration-target"
+        class="calibration-target"
+        aria-hidden="true"
+    >
+        ●
+    </div>
+</div>
+
+<script type="module" src="tracker.js"></script>
+</body>
+</html>
