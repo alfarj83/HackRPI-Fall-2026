@@ -6,7 +6,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Head in the Clouds</title>
-  <link rel="stylesheet" href="style.css">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css?v=geist9">
   <link rel="stylesheet" href="webcam-darkness/lighting.css">
 </head>
 
@@ -17,15 +18,37 @@
     <!-- HEADER -->
 
     <header class="topbar">
-      <div class="brand">
-        ☁ Head in the Clouds
-      </div>
+      <!-- Back arrow: returns to the cloud timer (hidden when already there) -->
+      <button id="home-nav" class="icon-button" aria-label="Back to timer" title="Back to timer">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M19 12H5"></path>
+          <path d="M11 6l-6 6 6 6"></path>
+        </svg>
+      </button>
 
       <button id="settings-nav" class="icon-button"
               aria-label="Settings">
         ⚙
       </button>
+      <button id="info-nav" class="icon-button" aria-label="Privacy information"
+              aria-expanded="false" aria-controls="privacy-panel" title="Privacy" hidden>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.5"></circle>
+          <path d="M12 11v6"></path>
+          <circle cx="12" cy="7.6" r="0.6" fill="currentColor"></circle>
+        </svg>
+      </button>
+      <!-- PRIVACY NOTE: a floating popover under the info icon (does not move the page) -->
+      <div id="privacy-panel" class="privacy-panel" role="note" hidden>
+        We do not store any videos or images of you. This is simply an eye sensor used
+        only to estimate where you are looking and how bright your room is, and it is
+        never recorded or stored anywhere. Only a saved short list of logs from your
+        calibration is kept locally on your device.
+      </div>
     </header>
+
 
 
     <!-- PAGE 1: CAMERA PERMISSION -->
@@ -117,26 +140,15 @@
         id="go-timer"
         class="primary wide"
         disabled>
-        Continue to Timer
+        Start Timer
       </button>
 
     </section>
 
 
-    <!-- PAGE 3: CLOUD TIMER -->
+    <!-- PAGE 3: CLOUD TIMER (the everyday view once setup is done) -->
 
     <section id="page-timer" class="app-page" hidden>
-
-      <h1 id="timer-heading">
-        Time to focus.
-      </h1>
-
-      <p id="timer-description" class="intro">
-        Your next break starts after
-        20 minutes of screen time.
-      </p>
-
-      <!-- CLOUD AND COUNTDOWN -->
 
       <div class="timer-hero">
 
@@ -150,53 +162,25 @@
           20:00
         </div>
 
-        <p class="timer-caption">
+        <p id="timer-caption" class="timer-caption">
           Until your next eye break
         </p>
 
       </div>
 
-      <!-- SCREEN PROGRESS -->
-
-      <div class="timer-track">
-        <div
-          id="screen-progress"
-          class="timer-fill">
-        </div>
+      <!-- Shown only during an eye break -->
+      <div id="away-line" class="break-row" hidden>
+        <span>Looking away</span>
+        <strong id="away-timer">00:00</strong>
       </div>
 
-      <!-- LOOKING AWAY TIMER -->
-
-      <div class="break-row">
-
-        <span>Looking Away</span>
-
-        <strong id="away-timer">
-          00:00
-        </strong>
-
+      <!-- Shown only when the camera is off after a restart or Stop -->
+      <div id="timer-off" class="timer-off" hidden>
+        <button id="timer-start" class="primary wide">
+          Start camera
+        </button>
+        <p id="timer-off-note" class="hint">Camera is off.</p>
       </div>
-
-      <div class="timer-track">
-        <div
-          id="away-progress"
-          class="timer-fill away-fill">
-        </div>
-      </div>
-
-      <!-- TRACKING STATUS -->
-
-      <p id="tracking-indicator" class="hint">
-        Camera not started
-      </p>
-
-      <p id="light-chip" class="light-chip" data-level="unknown" hidden></p>
-
-      <button
-        id="recalibrate"
-        class="secondary wide">
-        Recalibrate Camera
-      </button>
 
     </section>
 
@@ -219,9 +203,6 @@
           Stop Camera
         </button>
 
-        <button id="restart-camera">
-          Restart Camera
-        </button>
 
       </div>
 
@@ -245,108 +226,35 @@
         <p id="settings-message" class="muted" role="status"></p>
       </div>
 
-      <!-- ROOM LIGHTING -->
-
-      <div class="settings-card" id="lighting">
-        <strong>Room lighting</strong>
-        <div id="light-label">UNKNOWN</div>
-        <div id="light-message" data-level="unknown">Checking your room's lighting...</div>
-        <div class="metrics">
-          <div><strong id="light-bg">—</strong><span>Background brightness</span></div>
-          <div><strong id="light-dark">—</strong><span>Dark background</span></div>
-          <div><strong id="light-px">—</strong><span>Background pixels</span></div>
-        </div>
-        <p id="light-status" class="muted">Camera off</p>
-        <button id="notify-open" class="secondary">Notification settings</button>
-      </div>
-
-      <!-- ATTENTION STATUS -->
+      <!-- NOTIFICATIONS -->
 
       <div class="settings-card">
+        <strong>Notifications</strong>
 
-        <strong>Attention Status</strong>
+        <label class="switch-row" for="notify-lighting-toggle">
+          <span>Dark room alerts</span>
+          <input id="notify-lighting-toggle" type="checkbox" role="switch">
+        </label>
+        <p class="muted">A notification and a red badge when your room has been dark for 30 seconds.</p>
 
-        <h2 id="attention">
-          Unknown
-        </h2>
+        <label class="switch-row" for="notify-breaks-toggle">
+          <span>Eye break reminders</span>
+          <input id="notify-breaks-toggle" type="checkbox" role="switch">
+        </label>
+        <p class="muted">Clouds appear over your tabs when it is time to look away.</p>
 
+        <button id="notify-open" class="secondary wide">Allow system notifications</button>
       </div>
 
-      <!-- TRACKING DIAGNOSTICS -->
+      <!-- APPEARANCE -->
 
-      <details
-        class="tracker-section"
-        id="diagnostics-section">
-
-        <summary>
-          Tracking Diagnostics
-        </summary>
-
-        <div class="section-content">
-
-          <div class="metrics">
-
-            <div>
-              <strong id="faces">0</strong>
-              <span>Faces</span>
-            </div>
-
-            <div>
-              <strong id="landmarks">0</strong>
-              <span>Landmarks</span>
-            </div>
-
-            <div>
-              <strong id="head-x">—</strong>
-              <span>Head Offset X</span>
-            </div>
-
-            <div>
-              <strong id="head-y">—</strong>
-              <span>Head Offset Y</span>
-            </div>
-
-            <div>
-              <strong id="gaze-x">—</strong>
-              <span>Iris Ratio X</span>
-            </div>
-
-            <div>
-              <strong id="gaze-y">—</strong>
-              <span>Iris Ratio Y</span>
-            </div>
-
-            <div>
-              <strong id="delta">—</strong>
-              <span>Deviation</span>
-            </div>
-
-            <div>
-              <strong id="progress">—</strong>
-              <span>Calibration</span>
-            </div>
-
-          </div>
-
-          <p id="detail" class="muted">
-            No gaze estimate yet.
-          </p>
-
-          <p class="muted">
-            Eye tracking is an estimate and
-            can be affected by lighting,
-            glasses and camera position.
-          </p>
-
-        </div>
-
-      </details>
-
-      <button
-        id="back-to-timer"
-        class="primary wide">
-        Back to Timer
-      </button>
+      <div class="settings-card">
+        <strong>Appearance</strong>
+        <label class="switch-row" for="theme-toggle">
+          <span>Dark mode</span>
+          <input id="theme-toggle" type="checkbox" role="switch">
+        </label>
+      </div>
 
     </section>
 

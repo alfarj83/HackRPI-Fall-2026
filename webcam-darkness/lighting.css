@@ -27,4 +27,4 @@ button.secondary { background: #e5eaf0; color: #18212b; }
 .light-chip[data-level="dark"] { background: #fde2e2; }
 .light-chip[data-level="bright"] { background: #dff5e1; }
 .settings-card label { display: block; margin-top: 10px; font-weight: 600; font-size: 14px; }
-.settings-card input[type="number"] { width: 100px; padding: 6px 8px; border: 1px solid #9bb3c8; border-radius: 8px; font: inherit; }
+.settings-card input[type="number"] { width: 100px; padding: 6px 8px; border: 1px solid #9bb3c8; background: #fff; color: inherit; border-radius: 8px; font: inherit; }

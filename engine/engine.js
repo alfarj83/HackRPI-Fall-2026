@@ -9,6 +9,7 @@ import { AttentionDetector } from "../attention.js";
 import { BackgroundDarknessDetector } from "../webcam-darkness/detector.js";
 import { reminderStatus } from "../webcam-darkness/lighting-ui.js";
 import { AttentionTimers } from "./timers.js";
+import { exportSamples, sanitizeCalibration } from "./calibration.js";
 
 const TICK_MS = 50;
 const ATTENTION_INTERVAL_MS = 100;
@@ -28,6 +29,7 @@ export function createEngine({
   onState = () => {},
   onBreak = () => {},   // called with "start" or "end" when an eye break begins or ends
   onPreview = () => {}, // called with a small JPEG data URL while a preview is requested
+  onCalibrated = () => {}, // called with the samples when both calibration steps finish
   wasmUrl,
   modelUrl,
   getUserMedia = constraints => navigator.mediaDevices.getUserMedia(constraints)
@@ -54,8 +56,12 @@ export function createEngine({
   let startedAt = null;
 
   // Calibration runs here so it survives the popup closing.
-  const calibration = { active: null, hasScreen: false, hasAway: false, progress: 0 };
-  const resetCalibration = () => Object.assign(calibration, { active: null, hasScreen: false, hasAway: false, progress: 0 });
+  // pauseUntil: after step 1 an automatic run waits here, so you can look away before
+  // step 2 starts collecting. auto: step 1 was started as the automatic two-step run.
+  const CALIBRATION_PAUSE_MS = 3000;
+  const calibration = { active: null, hasScreen: false, hasAway: false, progress: 0, pauseUntil: null, auto: false };
+  const resetCalibration = () =>
+    Object.assign(calibration, { active: null, hasScreen: false, hasAway: false, progress: 0, pauseUntil: null, auto: false });
 
   // Live preview for the calibration page. Only produced while the popup asks for it.
   const PREVIEW_WIDTH = 320;
@@ -105,7 +111,13 @@ export function createEngine({
       ticks,
       startedAt,
       timers: timers.snapshot(),
-      calibration: { ...calibration },
+      calibration: {
+        active: calibration.active,
+        hasScreen: calibration.hasScreen,
+        hasAway: calibration.hasAway,
+        progress: calibration.progress,
+        pauseLeftMs: calibration.pauseUntil ? Math.max(0, calibration.pauseUntil - performance.now()) : 0
+      },
       lighting: { ...snapshotState.lighting },
       attention: { ...snapshotState.attention }
     };
@@ -159,11 +171,18 @@ export function createEngine({
 
     if (calibration.active && prediction.state === "calibrating") {
       calibration.progress = Math.min(30, prediction.progress || 0);
+      emit(true); // one update per sample (about 10 per second), so the bar can move evenly
       if (calibration.progress >= 30) {
         if (calibration.active === "screen") calibration.hasScreen = true;
         if (calibration.active === "away") calibration.hasAway = true;
+        // Automatic run: give the user a moment to look away before step 2 begins.
+        if (calibration.active === "screen" && calibration.auto) {
+          calibration.auto = false;
+          calibration.pauseUntil = performance.now() + CALIBRATION_PAUSE_MS;
+        }
         calibration.active = null;
         calibration.progress = 0;
+        if (calibration.hasScreen && calibration.hasAway) onCalibrated(exportSamples(attention.classifier));
       }
     }
   }
@@ -192,6 +211,15 @@ export function createEngine({
     if (!running) return;
     const now = performance.now();
     ticks++;
+
+    // End of the pause between the two automatic calibration steps: start step 2.
+    if (calibration.pauseUntil && now >= calibration.pauseUntil) {
+      calibration.pauseUntil = null;
+      calibration.active = "away";
+      calibration.progress = 0;
+      attention.beginCalibration("away");
+      emit(true);
+    }
 
     if (
       video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA &&
@@ -240,7 +268,8 @@ export function createEngine({
     tickTimer = setTimeout(tick, TICK_MS);
   }
 
-  async function start() {
+  // saved: calibration from an earlier setup. When valid, the engine starts already calibrated.
+  async function start(saved = null) {
     if (starting || running) return getState();
     starting = true;
     try {
@@ -252,10 +281,16 @@ export function createEngine({
       await loadModels();
 
       attention.reset();
+      resetCalibration();
+      const samples = sanitizeCalibration(saved);
+      if (samples) {
+        attention.classifier.samples = samples;
+        calibration.hasScreen = true;
+        calibration.hasAway = true;
+      }
       darkness.reset();
       darkness.setTrack(stream.getVideoTracks()[0]);
       timers.reset();
-      resetCalibration();
       lastVideoTime = -1;
       lastAttentionRun = -Infinity;
       lastDarknessRun = -Infinity;
@@ -295,9 +330,10 @@ export function createEngine({
   }
 
   // Same rules as the original page: screen first (restarts both steps), then away.
-  function calibrate(kind) {
+  // With auto, finishing step 1 pauses briefly and then starts step 2 by itself.
+  function calibrate(kind, { auto = false } = {}) {
     if (!running || !["screen", "away"].includes(kind)) return getState();
-    if (calibration.active) return getState();
+    if (calibration.active || calibration.pauseUntil) return getState();
     if (kind === "away" && !calibration.hasScreen) return getState();
     if (kind === "screen") {
       calibration.hasScreen = false;
@@ -305,9 +341,18 @@ export function createEngine({
     } else {
       calibration.hasAway = false;
     }
+    calibration.auto = kind === "screen" && auto;
     calibration.active = kind;
     calibration.progress = 0;
     attention.beginCalibration(kind);
+    emit(true);
+    return getState();
+  }
+
+  // "Redo setup": forget the calibration but keep the camera running.
+  function clearCalibration() {
+    attention.reset();
+    resetCalibration();
     emit(true);
     return getState();
   }
@@ -330,5 +375,5 @@ export function createEngine({
     return getState();
   }
 
-  return { start, stop, calibrate, requestPreview, getState, applySettings, dispose };
+  return { start, stop, calibrate, clearCalibration, requestPreview, getState, applySettings, dispose };
 }
