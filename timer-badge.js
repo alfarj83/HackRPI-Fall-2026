@@ -6,7 +6,9 @@
 //   counting     cloud + the time left until the next break, in dark text
 //   on a break   cloud + the time left in the break, in orange
 //   camera off   the cloud alone
-//   dark room    also puts a small red "!" badge on top (only if dark room alerts are on)
+//   dark room    also puts a small red dot in the top right corner of the icon (only if dark
+//                room alerts are on). It is painted into the icon, because Chrome's own badge
+//                can only sit in the bottom right corner.
 // The icon is painted with an OffscreenCanvas, which the service worker has. The full
 // countdown is also in the tooltip when you hover the icon.
 const COLORS = { counting: "#1b2733", breakTime: "#e8710a", dark: "#d93025" };
@@ -26,7 +28,7 @@ export function clockText(ms) {
 // time is null when there is nothing to write under the cloud.
 export function badgeFor(state, { showDark = true } = {}) {
   if (!state?.running || !state.timers) {
-    return { time: null, mode: "off", dark: false, title: DEFAULT_TITLE };
+    return { time: null, mode: "off", dark: false, ratio: 0, title: DEFAULT_TITLE };
   }
 
   const t = state.timers;
@@ -35,47 +37,66 @@ export function badgeFor(state, { showDark = true } = {}) {
 
   if (t.onBreak) {
     const time = clockText(t.awayLimit - t.awayTime);
-    return { time, mode: "break", dark, title: `Head in the Clouds: look away, ${time} left in your break.${darkNote}` };
+    return { time, mode: "break", dark, ratio: 1, title: `Head in the Clouds: look away, ${time} left in your break.${darkNote}` };
   }
 
   const time = clockText(t.screenLimit - t.screenTime);
-  return { time, mode: "counting", dark, title: `Head in the Clouds: ${time} until your next eye break.${darkNote}` };
+  // How full the purple outline is: the same value the popup's cloud uses.
+  const ratio = t.screenLimit > 0 ? Math.max(0, Math.min(1, t.screenTime / t.screenLimit)) : 0;
+  return { time, mode: "counting", dark, ratio, title: `Head in the Clouds: ${time} until your next eye break.${darkNote}` };
 }
 
 // ---- drawing ----
+// The same four layers as the popup's cloud (360x240 each), stacked in this order.
+const LAYERS = ["ProgressColor", "CloudBase", "Eyes", "Mouth"];
 let cloudPromise = null;
 function loadCloud() {
   if (!cloudPromise) {
-    cloudPromise = fetch(chrome.runtime.getURL(CLOUD_IMAGE))
-      .then(response => response.blob())
-      .then(blob => createImageBitmap(blob))
-      .catch(() => null); // no image: the icon is just the time
+    cloudPromise = Promise.all(
+      LAYERS.map(name =>
+        fetch(chrome.runtime.getURL(`Images/${name}.png`))
+          .then(response => response.blob())
+          .then(blob => createImageBitmap(blob))
+      )
+    )
+      .then(([progress, body, eyes, mouth]) => ({ progress, body, eyes, mouth }))
+      .catch(() => null); // no images: the icon is just the time
   }
   return cloudPromise;
 }
 
-function drawIcon(size, cloud, time, mode) {
+function drawIcon(size, cloud, time, mode, ratio, dark) {
   const canvas = new OffscreenCanvas(size, size);
   const g = canvas.getContext("2d");
   g.clearRect(0, 0, size, size);
 
   // The cloud takes the top part, or the whole icon when there is no time to show.
   if (cloud) {
-    const areaH = time ? size * 0.55 : size * 0.92;
-    const scale = Math.min((size * 0.96) / cloud.width, areaH / cloud.height);
-    const w = cloud.width * scale;
-    const h = cloud.height * scale;
+    const areaH = time ? size * 0.54 : size * 0.92;
+    const scale = Math.min((size * 0.96) / cloud.body.width, areaH / cloud.body.height);
+    const w = cloud.body.width * scale;
+    const h = cloud.body.height * scale;
+    const x = (size - w) / 2;
     const y = time ? size * 0.02 : (size - h) / 2;
-    g.drawImage(cloud, (size - w) / 2, y, w, h);
+
+    // Purple outline, revealed left to right like in the popup.
+    const shown = Math.max(0, Math.min(1, ratio));
+    if (shown > 0) {
+      g.drawImage(cloud.progress, 0, 0, cloud.progress.width * shown, cloud.progress.height,
+                  x, y, w * shown, h);
+    }
+    g.drawImage(cloud.body, x, y, w, h);
+    g.drawImage(cloud.eyes, x, y, w, h);
+    g.drawImage(cloud.mouth, x, y, w, h);
   }
 
   if (time) {
-    g.font = `bold ${Math.round(size * 0.36)}px system-ui, -apple-system, "Segoe UI", sans-serif`;
+    g.font = `bold ${Math.round(size * 0.44)}px system-ui, -apple-system, "Segoe UI", sans-serif`;
     g.textAlign = "center";
     g.textBaseline = "alphabetic";
     const x = size / 2;
-    const y = size * 0.97;
-    const maxWidth = size * 0.98;
+    const y = size * 0.99;
+    const maxWidth = size; // squeezes slightly if the digits are wider than the icon
     // A light outline keeps the digits readable on both light and dark toolbars.
     g.lineJoin = "round";
     g.lineWidth = Math.max(2, size * 0.1);
@@ -83,6 +104,20 @@ function drawIcon(size, cloud, time, mode) {
     g.strokeText(time, x, y, maxWidth);
     g.fillStyle = mode === "break" ? COLORS.breakTime : COLORS.counting;
     g.fillText(time, x, y, maxWidth);
+  }
+
+  // Dark room alert: a small red circle in the top right corner, drawn last so it is on top.
+  if (dark) {
+    const radius = size * 0.15;
+    const cx = size - radius - size * 0.03;
+    const cy = radius + size * 0.03;
+    g.beginPath();
+    g.arc(cx, cy, radius, 0, Math.PI * 2);
+    g.fillStyle = COLORS.dark;
+    g.fill();
+    g.lineWidth = Math.max(1, size * 0.05);
+    g.strokeStyle = "#ffffff";
+    g.stroke();
   }
   return g.getImageData(0, 0, size, size);
 }
@@ -101,7 +136,7 @@ export function renderTimerBadge(state, options) {
   if (!api) return;
 
   const badge = badgeFor(state, options);
-  const key = `${badge.time}|${badge.mode}|${badge.dark}`;
+  const key = `${badge.time}|${badge.mode}|${badge.dark}|${Math.round(badge.ratio * 100)}`;
   if (key === lastKey) return;
   lastKey = key;
 
@@ -110,15 +145,12 @@ export function renderTimerBadge(state, options) {
     if (key !== lastKey || typeof OffscreenCanvas === "undefined") return;
     const cloud = await loadCloud();
     const imageData = {};
-    for (const size of SIZES) imageData[size] = drawIcon(size, cloud, badge.time, badge.mode);
+    for (const size of SIZES) imageData[size] = drawIcon(size, cloud, badge.time, badge.mode, badge.ratio, badge.dark);
     await safe(api.setIcon({ imageData }));
   });
 
-  safe(api.setBadgeText({ text: badge.dark ? "!" : "" }));
-  if (badge.dark) {
-    safe(api.setBadgeBackgroundColor({ color: COLORS.dark }));
-    if (api.setBadgeTextColor) safe(api.setBadgeTextColor({ color: "#ffffff" }));
-  }
+  // The old "!" badge is gone; make sure none is left over from an earlier version.
+  safe(api.setBadgeText({ text: "" }));
   safe(api.setTitle({ title: badge.title }));
 }
 
