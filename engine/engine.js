@@ -10,6 +10,7 @@ import { BackgroundDarknessDetector } from "../webcam-darkness/detector.js";
 import { reminderStatus } from "../webcam-darkness/lighting-ui.js";
 import { AttentionTimers } from "./timers.js";
 import { exportSamples, sanitizeCalibration } from "./calibration.js";
+import { GUIDED_STEPS, SAMPLES_PER_STEP, SETTLE_MS, SAMPLE_INTERVAL_MS } from "./guided-steps.js";
 
 const TICK_MS = 50;
 const ATTENTION_INTERVAL_MS = 100;
@@ -63,6 +64,125 @@ export function createEngine({
   const resetCalibration = () =>
     Object.assign(calibration, { active: null, hasScreen: false, hasAway: false, progress: 0, pauseUntil: null, auto: false });
 
+  // Guided nine-target calibration lives in the offscreen engine. The popup is
+  // only a view; dismissing it does not prematurely commit partial training.
+  const guided = {
+    active: false, stepIndex: 0, collected: 0, startedAt: 0,
+    lastSampleAt: -Infinity, rejectionReason: '', completedSteps: 0,
+    previousSamples: null
+  };
+  function resetGuided() {
+    Object.assign(guided, {
+      active: false, stepIndex: 0, collected: 0, startedAt: 0,
+      lastSampleAt: -Infinity, rejectionReason: '', completedSteps: 0,
+      previousSamples: null
+    });
+  }
+  function guidedState() {
+    return {
+      active: guided.active,
+      stepIndex: guided.stepIndex,
+      totalSteps: GUIDED_STEPS.length,
+      collected: guided.collected,
+      samplesRequired: SAMPLES_PER_STEP,
+      completedSteps: guided.completedSteps,
+      settleRemainingMs: guided.active ? Math.max(0, SETTLE_MS - (performance.now() - guided.startedAt)) : 0,
+      rejectionReason: guided.rejectionReason,
+      completed: !guided.active && guided.completedSteps === GUIDED_STEPS.length
+    };
+  }
+  function beginGuided() {
+    if (!running || guided.active || calibration.active || calibration.pauseUntil) return getState();
+    // Retain the previous trained classifier until this run finishes successfully.
+    guided.previousSamples = exportSamples(attention.classifier);
+    attention.classifier.clear();
+    resetCalibration();
+    guided.active = true;
+    guided.stepIndex = 0;
+    guided.completedSteps = 0;
+    guided.collected = 0;
+    guided.startedAt = performance.now();
+    guided.lastSampleAt = -Infinity;
+    guided.rejectionReason = '';
+    // Pause timers while guided calibration is running.
+    timers.setPrediction('calibrating', performance.now());
+    emit(true);
+    return getState();
+  }
+  function cancelGuided() {
+    if (!guided.active) return getState();
+    const restored = guided.previousSamples || [];
+    attention.classifier.samples = restored.map(s => ({label:s.label, values:[...s.values]}));
+    resetCalibration();
+    const saved = sanitizeCalibration(restored);
+    if (saved) { calibration.hasScreen = true; calibration.hasAway = true; }
+    resetGuided();
+    timers.setPrediction('unknown', performance.now());
+    emit(true);
+    return getState();
+  }
+  function collectGuided(prediction, result, now) {
+    if (!guided.active) return;
+    // The popup requests preview frames only while its calibration page is visible.
+    // Don't silently advance to a new dot after the popup closes or loses focus.
+    if (now >= previewUntil) {
+      guided.startedAt = now; // require a fresh settle interval after returning
+      guided.rejectionReason = 'Open the calibration page to continue';
+      return;
+    }
+    if (now - guided.startedAt < SETTLE_MS) return;
+    const features = prediction.features;
+    const blinkCategories = result.faceBlendshapes?.[0]?.categories || [];
+    const blink = Math.max(...['eyeBlinkLeft','eyeBlinkRight'].map(name =>
+      blinkCategories.find(c => c.categoryName === name)?.score ?? 0));
+    if (blink > 0.5) {
+      guided.rejectionReason = 'Blink / eye reopening';
+      return;
+    }
+    if (!features || !['headX','headY','gazeX','gazeY'].every(k => Number.isFinite(features[k]))) {
+      guided.rejectionReason = prediction.reason || 'Iris landmarks unavailable';
+      return;
+    }
+    if (now - guided.lastSampleAt < SAMPLE_INTERVAL_MS) return;
+    const step = GUIDED_STEPS[guided.stepIndex];
+    if (!attention.classifier.addSample(features, step.label)) {
+      guided.rejectionReason = 'Classifier rejected the sample';
+      return;
+    }
+    guided.rejectionReason = '';
+    guided.collected++;
+    guided.lastSampleAt = now;
+    if (guided.collected >= SAMPLES_PER_STEP) {
+      guided.completedSteps++;
+      guided.stepIndex++;
+      guided.collected = 0;
+      guided.startedAt = now;
+      guided.lastSampleAt = -Infinity;
+      if (guided.stepIndex >= GUIDED_STEPS.length) {
+        const saved = sanitizeCalibration(exportSamples(attention.classifier));
+        if (saved) {
+          // Preserve the successfully collected classifier samples even if
+          // AttentionDetector.reset() changes its implementation in another branch.
+          attention.reset();
+          attention.classifier.samples = saved.map(sample => ({
+            label: sample.label,
+            values: [...sample.values]
+          }));
+          calibration.hasScreen = attention.classifier.count('screen') >= 20;
+          calibration.hasAway = attention.classifier.count('away') >= 20;
+          guided.active = false;
+          guided.previousSamples = null;
+          timers.setPrediction('unknown', now);
+          onCalibrated(saved);
+        } else {
+          guided.rejectionReason = 'Insufficient valid samples to save calibration';
+          cancelGuided();
+        }
+      }
+    }
+    emit(true);
+  }
+
   // Live preview for the calibration page. Only produced while the popup asks for it.
   const PREVIEW_WIDTH = 320;
   const PREVIEW_INTERVAL_MS = 150;
@@ -113,10 +233,16 @@ export function createEngine({
       timers: timers.snapshot(),
       calibration: {
         active: calibration.active,
-        hasScreen: calibration.hasScreen,
-        hasAway: calibration.hasAway,
+        // Report actual classifier readiness, not only historical completion flags.
+        hasScreen: calibration.hasScreen && attention.classifier.count('screen') >= 20,
+        hasAway: calibration.hasAway && attention.classifier.count('away') >= 20,
+        sampleCounts: {
+          screen: attention.classifier.count('screen'),
+          away: attention.classifier.count('away')
+        },
         progress: calibration.progress,
-        pauseLeftMs: calibration.pauseUntil ? Math.max(0, calibration.pauseUntil - performance.now()) : 0
+        pauseLeftMs: calibration.pauseUntil ? Math.max(0, calibration.pauseUntil - performance.now()) : 0,
+        guided: guidedState()
       },
       lighting: { ...snapshotState.lighting },
       attention: { ...snapshotState.attention }
@@ -240,7 +366,8 @@ export function createEngine({
         const result = landmarker.detectForVideo(frame, now);
         const prediction = attention.update(result, now, width, height);
         summarize(result, prediction);
-        timers.setPrediction(prediction.state, now);
+        if (guided.active) collectGuided(prediction, result, now);
+        timers.setPrediction(guided.active ? "calibrating" : prediction.state, now);
 
         if (now < previewUntil && now - lastPreview >= PREVIEW_INTERVAL_MS) {
           lastPreview = now;
@@ -282,6 +409,7 @@ export function createEngine({
 
       attention.reset();
       resetCalibration();
+      resetGuided();
       const samples = sanitizeCalibration(saved);
       if (samples) {
         attention.classifier.samples = samples;
@@ -319,6 +447,7 @@ export function createEngine({
     video.srcObject = null;
     if (timers.stop()) onBreak("end");
     resetCalibration();
+    resetGuided();
     previewUntil = 0;
     darkness.reset();
     darkness.setTrack(null);
@@ -332,7 +461,8 @@ export function createEngine({
   // Same rules as the original page: screen first (restarts both steps), then away.
   // With auto, finishing step 1 pauses briefly and then starts step 2 by itself.
   function calibrate(kind, { auto = false } = {}) {
-    if (!running || !["screen", "away"].includes(kind)) return getState();
+    if (kind === "guided") return beginGuided();
+    if (!running || guided.active || !["screen", "away"].includes(kind)) return getState();
     if (calibration.active || calibration.pauseUntil) return getState();
     if (kind === "away" && !calibration.hasScreen) return getState();
     if (kind === "screen") {
@@ -351,8 +481,10 @@ export function createEngine({
 
   // "Redo setup": forget the calibration but keep the camera running.
   function clearCalibration() {
-    attention.reset();
+    // A full reset must remove saved training samples, not just timing state.
+    attention.clearCalibration();
     resetCalibration();
+    resetGuided();
     emit(true);
     return getState();
   }
@@ -375,5 +507,5 @@ export function createEngine({
     return getState();
   }
 
-  return { start, stop, calibrate, clearCalibration, requestPreview, getState, applySettings, dispose };
+  return { start, stop, calibrate, cancelGuided, clearCalibration, requestPreview, getState, applySettings, dispose };
 }

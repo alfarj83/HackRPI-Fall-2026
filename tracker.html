@@ -10,6 +10,25 @@
   <link rel="stylesheet" href="style.css?v=geist9">
   <link rel="stylesheet" href="cloud-timer.css">
   <link rel="stylesheet" href="webcam-darkness/lighting.css">
+  <style>
+    /* The popup controller animates calibration progress with scaleX().
+       A transform cannot show a bar whose width is initially 0%. */
+    #calibration-bar {
+      width: 100%;
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: none;
+    }
+    [hidden] { display: none !important; }
+    .calibration-overlay { position: fixed; inset: 0; z-index: 1000; pointer-events: none; background: transparent; }
+    .calibration-target { position: absolute; transform: translate(-50%, -50%); font-size: 54px; line-height: 1; color: #18bf9a; text-shadow: 0 0 12px #075e4a; }
+    .calibration-target.away-target { color: #d58b24; font-size: 70px; }
+    .calibration-panel { position: relative; z-index: 1001; padding: 12px; background: #e6f1f9; border-radius: 12px; margin: 12px 0; }
+    .calibration-panel h2 { font-size: 15px; margin: 8px 0; }
+    .calibration-panel p { font-size: 12px; }
+
+  </style>
+  <style>.wizard .weekly-ai-result { white-space: pre-wrap; line-height: 1.6; font-size: 13px; overflow-wrap: anywhere; margin-top: 10px; } .wizard .weekly-ai-result:empty { display:none; }</style>
 </head>
 
 <body class="tracker tracker-compact wizard">
@@ -20,7 +39,7 @@
 
     <header class="topbar">
       <!-- Back arrow: returns to the cloud timer (hidden when already there) -->
-      <button id="home-nav" class="icon-button" aria-label="Back to timer" title="Back to timer">
+      <button type="button" id="home-nav" class="icon-button" aria-label="Back to timer" title="Back to timer">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5"></path>
@@ -28,11 +47,11 @@
         </svg>
       </button>
 
-      <button id="settings-nav" class="icon-button"
+      <button type="button" id="settings-nav" class="icon-button"
               aria-label="Settings">
         ⚙
       </button>
-      <button id="info-nav" class="icon-button" aria-label="Privacy information"
+      <button type="button" id="info-nav" class="icon-button" aria-label="Privacy information"
               aria-expanded="false" aria-controls="privacy-panel" title="Privacy" hidden>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -63,7 +82,14 @@
     <section id="page-permission" class="app-page">
 
       <div class="welcome-content">
-        <button id="start" class="primary wide">
+
+        <h1>Welcome!</h1>
+
+        <p class="intro">
+          Enable your camera to get started.
+        </p>
+
+        <button type="button" id="start" class="primary wide">
           Enable Camera
         </button>
 
@@ -93,18 +119,15 @@
 
       </div>
 
-      <!-- CALIBRATION INSTRUCTIONS -->
-
-      <p id="calibration-hint" class="hint">
-        Look directly at your screen.
-      </p>
-
-    <button
-      id="calibrate-screen"
-      class="primary wide"
-      disabled>
-      Calibrate
-    </button>
+      <p id="calibration-hint" class="hint">Calibration targets will appear on your active webpage. For arrows, look beyond the monitor.</p>
+      <button type="button" id="guided-calibrate" class="primary wide" disabled>Calibrate on current webpage</button>
+      <aside id="calibration-panel" class="calibration-panel" hidden>
+        <strong id="calibration-step">Target 1 of 9</strong>
+        <h2 id="calibration-mode">Look at the dot</h2>
+        <p id="calibration-help"></p>
+        <p id="calibration-progress" role="status"></p>
+        <button type="button" id="cancel-calibration" class="secondary">Cancel calibration</button>
+      </aside>
 
       <!-- CALIBRATION PROGRESS -->
 
@@ -116,10 +139,10 @@
       </div>
 
       <p id="calibration-message">
-        0 of 2 steps complete
+        0 of 9 targets complete
       </p>
 
-      <button
+      <button type="button"
         id="go-timer"
         class="primary wide"
         disabled>
@@ -145,6 +168,15 @@
 
       </div>
 
+      <!-- Always-visible camera status and calibration entry point. -->
+      <section class="settings-card" id="timer-camera-card" aria-label="Camera and calibration status" style="margin-top: 14px;">
+        <p id="timer-camera-status" class="muted" role="status" aria-live="polite">Checking camera…</p>
+        <p id="timer-attention-status" class="muted" role="status" aria-live="polite" style="margin: 8px 0 4px;">Checking gaze detection…</p>
+        <p id="timer-attention-detail" class="muted" style="font-size: 12px; margin: 0 0 8px;">Countdown advances only while looking at your screen.</p>
+        <p class="muted" style="margin: 6px 0 10px;">The webcam preview appears on the Calibrate page, not in this timer view. Calibration targets open over your active website.</p>
+        <button type="button" id="timer-calibrate" class="secondary wide">Calibrate / Recalibrate</button>
+      </section>
+
       <!-- Shown only during an eye break -->
       <div id="away-line" class="break-row" hidden>
         <span>Looking away</span>
@@ -153,7 +185,7 @@
 
       <!-- Shown only when the camera is off after a restart or Stop -->
       <div id="timer-off" class="timer-off" hidden>
-        <button id="timer-start" class="primary wide">
+        <button type="button" id="timer-start" class="primary wide">
           Start camera
         </button>
         <p id="timer-off-note" class="hint">Camera is off</p>
@@ -172,11 +204,12 @@
         Camera and tracking information.
       </p>
 
+
       <!-- CAMERA CONTROLS -->
 
       <div class="buttons">
 
-        <button id="stop" disabled>
+        <button type="button" id="stop" disabled>
           Stop Camera
         </button>
 
@@ -197,8 +230,8 @@
         <p class="muted">Default 20 seconds. Any value from 1 to 600 works.</p>
 
         <div class="buttons">
-          <button id="save-settings" class="primary">Save</button>
-          <button id="reset-settings" class="secondary">Reset</button>
+          <button type="button" id="save-settings" class="primary">Save</button>
+          <button type="button" id="reset-settings" class="secondary">Reset</button>
         </div>
         <p id="settings-message" class="muted" role="status"></p>
       </div>
@@ -220,7 +253,7 @@
         </label>
         <p class="muted">Clouds appear over your tabs when it is time to look away.</p>
 
-        <button id="notify-open" class="secondary wide">Allow system notifications</button>
+        <button type="button" id="notify-open" class="secondary wide">Allow system notifications</button>
       </div>
 
       <!-- APPEARANCE -->
@@ -233,9 +266,24 @@
         </label>
       </div>
 
+      <!-- GEMINI WEEKLY SUMMARY -->
+      <section class="settings-card" aria-labelledby="weekly-ai-heading">
+        <h2 id="weekly-ai-heading">Weekly AI summary</h2>
+        <div class="weekly-chart-card">
+          <h3>Screen time this week</h3>
+          <p id="weekly-chart-total"></p>
+          <div id="weekly-screen-chart"></div>
+        </div>
+        <p class="muted">Compare recorded screen-viewing time with completed eye-care breaks over the last seven days.</p>
+        <p id="weekly-ai-totals" class="muted">Loading saved statistics…</p>
+        <button id="generate-weekly-summary" class="primary wide" type="button">Generate weekly summary</button>
+        <p id="weekly-ai-status" class="muted" role="status" aria-live="polite"></p>
+        <div id="weekly-ai-result" class="weekly-ai-result" aria-live="polite"></div>
+        <p class="muted">Seven days of aggregated tracking statistics are sent to the Head in the Clouds backend and Gemini only when you generate a summary. No webcam images are sent.</p>
+      </section>
+
     </section>
 
-    
     <!-- RESET EVERYTHING -->
     <div class="settings-card">
       <strong>Reset Everything</strong>
@@ -245,7 +293,7 @@
         stop tracking, and return to the Welcome screen.
       </p>
 
-      <button id="reset-everything" class="danger-button wide">
+      <button type="button" id="reset-everything" class="danger-button wide">
         Reset Everything
       </button>
 
@@ -253,6 +301,30 @@
         class="muted"
         role="status"></p>
     </div>
+
+    
+    <!-- BOTTOM PAGE NAVIGATION -->
+
+    <nav class="bottom-nav">
+
+      <button type="button" data-nav="permission">
+        Camera
+      </button>
+
+      <button type="button" data-nav="calibration">
+        Calibrate
+      </button>
+
+      <button type="button" data-nav="timer">
+        Timer
+      </button>
+
+      <button type="button" data-nav="settings">
+        Settings
+      </button>
+
+    </nav>
+
   </main>
 
 
@@ -261,10 +333,15 @@
     <p>Head in the Clouds can remind you to turn on a light when your room has been dark for a while. Click Allow and we'll send a test notification, so Chrome and your computer can ask for permission.</p>
     <p id="notify-result" class="muted"></p>
     <div class="buttons">
-      <button id="notify-allow" class="primary">Allow notifications</button>
-      <button id="notify-later" class="secondary">Not now</button>
+      <button type="button" id="notify-allow" class="primary">Allow notifications</button>
+      <button type="button" id="notify-later" class="secondary">Not now</button>
     </div>
   </dialog>
+
+  <!-- Moving calibration target is separate from the instructions. -->
+  <div id="calibration-overlay" class="calibration-overlay" hidden aria-hidden="true">
+    <div id="calibration-target" class="calibration-target">●</div>
+  </div>
 
   <!-- POPUP SCRIPT (the camera runs in offscreen.html) -->
 
