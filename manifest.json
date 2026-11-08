@@ -11,7 +11,8 @@
     "alarms",
     "tabs",
     "notifications",
-    "offscreen"
+    "offscreen",
+    "scripting"
   ],
   "background": {
     "service_worker": "background.js",
