@@ -2,16 +2,47 @@ import { updateBadge, clearBadge } from "./webcam-darkness/badge.js";
 import { maybeNotify, resetNotifier } from "./webcam-darkness/notifier.js";
 import { loadSettings, toLimits, STORAGE_KEY } from "./settings.js";
 
+
 async function notifyTabs(type) {
   const tabs = await chrome.tabs.query({});
+
+  console.log("Cloud event:", type);
 
   for (const tab of tabs) {
     if (!tab.id) continue;
 
+    // Only try to display clouds on normal websites.
+    if (!/^https?:\/\//.test(tab.url || "")) continue;
+
     try {
+      // First, try the existing cloud script.
       await chrome.tabs.sendMessage(tab.id, { type });
+
+      console.log("Cloud message delivered:", tab.url);
+
     } catch (error) {
-      // Restricted Chrome pages cannot receive messages.
+
+      // If the script isn't available, try injecting it.
+      console.log("Injecting clouds into:", tab.url);
+
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["cloud-overlay.js"]
+        });
+
+        // Try again after injecting the script.
+        await chrome.tabs.sendMessage(tab.id, { type });
+
+        console.log("Cloud message delivered:", tab.url);
+
+      } catch (injectionError) {
+        console.warn(
+          "Cloud injection failed:",
+          tab.url,
+          injectionError.message
+        );
+      }
     }
   }
 }
