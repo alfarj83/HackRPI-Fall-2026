@@ -20,9 +20,9 @@ body {
 }
 
 body.tracker.tracker-compact.wizard {
-  width: 380px;
-  min-width: 380px;
-  max-width: 380px;
+  width: 420px;
+  min-width: 420px;
+  max-width: 420px;
   height: 540px;
   max-height: 540px;
   overflow-x: hidden;
