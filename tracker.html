@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EyeEase tracker</title><link rel="stylesheet" href="style.css"></head>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>EyeEase tracker</title><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="webcam-darkness/lighting.css"><style>.gear{position:absolute;top:14px;right:14px;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:#e5eaf0;color:#294D68;font-size:20px;line-height:36px;cursor:pointer}.gear:hover{background:#d3e2ed}body.tracker-compact{position:relative}.tracker-compact h1{padding-right:44px}</style></head>
 <body class="tracker tracker-compact">
 <main>
+  <button id="settings-open" class="gear" title="Settings" aria-label="Settings">&#9881;</button>
   <h1>Head in the Clouds — screen-direction tracker</h1>
   <p>Position the webcam normally, click Start, then look at your usual screen-reading area and click Calibrate. All processing stays in this tab.</p>
   <div class="buttons">
@@ -26,7 +27,7 @@
     <div class="timer-card">
         <span>Screen time</span>
         <strong id="screen-timer">00:00</strong>
-        <small>Resets every 20 minutes</small>
+        <small id="screen-note">Resets every 20 minutes</small>
         <div class="timer-track">
             <div id="screen-progress" class="timer-fill"></div>
         </div>
@@ -35,7 +36,7 @@
     <div class="timer-card">
         <span>Looking away</span>
         <strong id="away-timer">00:00</strong>
-        <small>Resets every 20 seconds</small>
+        <small id="away-note">Resets every 20 seconds</small>
         <div class="timer-track">
             <div id="away-progress" class="timer-fill"></div>
         </div>
@@ -49,18 +50,11 @@
   </summary>
 
   <div class="section-content">
-    <div class="preview">
-      <div class="camera-layer">
-        <video
-          id="webcam"
-          autoplay
-          muted
-          playsinline
-        ></video>
-
-        <canvas id="overlay"></canvas>
-      </div>
-    </div>
+    <p class="muted">
+      The camera runs in the background so it keeps working when this popup is
+      closed. There is no live preview here. Your computer's camera light shows
+      when it is on.
+    </p>
   </div>
 </details>
 
@@ -132,6 +126,37 @@
 
   </div>
 </details>
+
+<!-- ROOM LIGHTING (webcam-darkness) -->
+<details class="tracker-section" id="lighting-section" open>
+  <summary>
+    Room lighting
+  </summary>
+
+  <div class="section-content">
+    <div id="light-label">UNKNOWN</div>
+    <div id="light-message" data-level="unknown">Checking your room's lighting...</div>
+
+    <div class="metrics">
+      <div><strong id="light-bg">—</strong><span>Background brightness</span></div>
+      <div><strong id="light-dark">—</strong><span>Dark background</span></div>
+      <div><strong id="light-px">—</strong><span>Background pixels</span></div>
+    </div>
+
+    <p id="light-status" class="muted">Waiting for camera</p>
+    <button id="notify-open" class="secondary">Notification settings</button>
+  </div>
+</details>
+
+<dialog id="notify-dialog">
+  <h2>Allow notifications?</h2>
+  <p>Head in the Clouds can remind you to turn on a light when your room has been dark for a while. Click Allow and we'll send a test notification, so Chrome and your computer can ask for permission.</p>
+  <p id="notify-result" class="muted"></p>
+  <div class="buttons">
+    <button id="notify-allow">Allow notifications</button>
+    <button id="notify-later" class="secondary">Not now</button>
+  </div>
+</dialog>
 </main>
 <script type="module" src="tracker.js"></script>
 </body>

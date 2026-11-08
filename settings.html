@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Head in the Clouds settings</title>
+<style>
+body{font:16px system-ui,sans-serif;background:#F4F9FD;color:#294D68;margin:0;padding:32px 16px}
+main{max-width:480px;margin:0 auto;background:#fff;border:1px solid #D3E2ED;border-radius:14px;padding:24px}
+h1{margin:0 0 4px;font-size:22px}
+.sub{color:#536273;margin:0 0 20px;font-size:14px}
+label{display:block;font-weight:600;margin-top:18px}
+.row{display:flex;align-items:center;gap:10px;margin-top:6px}
+input{font:inherit;width:110px;padding:8px 10px;border:1px solid #9bb3c8;border-radius:8px}
+.hint{color:#536273;font-size:13px;margin:6px 0 0}
+button{font:inherit;margin-top:24px;padding:10px 18px;border:0;border-radius:10px;background:#176AA8;color:#fff;cursor:pointer}
+button.secondary{background:#e5eaf0;color:#18212b;margin-left:8px}
+#msg{margin-top:14px;min-height:1.2em;font-size:14px}
+</style></head>
+<body>
+<main>
+  <h1>Settings</h1>
+  <p class="sub">Changes apply right away, even while the camera is running.</p>
+
+  <label for="screen-minutes">Screen time before a break</label>
+  <div class="row"><input id="screen-minutes" type="number" min="20" max="240" step="1"> minutes</div>
+  <p class="hint">Minimum 20 minutes. You can only add time.</p>
+
+  <label for="break-seconds">Eye break length</label>
+  <div class="row"><input id="break-seconds" type="number" min="20" max="600" step="1"> seconds</div>
+  <p class="hint">Minimum 20 seconds. You can only add time.</p>
+
+  <button id="save">Save</button><button id="reset" class="secondary">Reset to default</button>
+  <div id="msg" role="status"></div>
+</main>
+<script type="module" src="settings-page.js"></script>
+</body></html>

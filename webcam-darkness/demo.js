@@ -19,8 +19,12 @@ function drawDarkMask(reading) {
   octx.putImageData(img, 0, 0);
 }
 
+// The detector no longer owns the camera, so this debug page opens its own.
+const video = $("webcam");
+let stream = null;
+let timer = null;
+
 const detector = new BackgroundDarknessDetector({
-  video: $("webcam"),
   onError: error => {
     console.error(error);
     $("status").textContent = `Error: ${error.name}: ${error.message}`;
@@ -38,7 +42,6 @@ const detector = new BackgroundDarknessDetector({
       `background luma (median, now): ${fmt(reading.bgLuma, 0)}`,
       `background luma (10s avg):     ${fmt(state.bgLuma)}`,
       `dark background pixels:        ${fmt(reading.darkPct)}%  (10s avg ${fmt(state.darkPct)}%)`,
-      `person luma / background luma: ${fmt(reading.faceToBg, 2)}`,
       `background px / person px:     ${reading.bgCount} / ${reading.fgCount}`,
       `mask values seen: ${maskValues.join(", ")}  (person = 0)`,
       `exposure: ${JSON.stringify(exposure)}`
@@ -55,7 +58,16 @@ $("start").addEventListener("click", async () => {
   $("start").disabled = true;
   $("status").textContent = "Loading model and starting camera...";
   try {
-    await detector.start();
+    await detector.init();
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 960 }, height: { ideal: 720 } },
+      audio: false
+    });
+    video.srcObject = stream;
+    await video.play();
+    detector.setTrack(stream.getVideoTracks()[0]);
+    detector.reset();
+    timer = setInterval(() => detector.process(video), 200);
     $("status").textContent = "Running.";
     $("stop").disabled = false;
     $("lock").disabled = false;
@@ -67,7 +79,11 @@ $("start").addEventListener("click", async () => {
 });
 
 $("stop").addEventListener("click", () => {
-  detector.stop();
+  clearInterval(timer);
+  timer = null;
+  stream?.getTracks().forEach(t => t.stop());
+  stream = null;
+  video.srcObject = null;
   octx.clearRect(0, 0, overlay.width, overlay.height);
   $("start").disabled = false;
   $("stop").disabled = true;
