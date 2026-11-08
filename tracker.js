@@ -462,8 +462,6 @@ $('cancel-calibration').addEventListener('click', async () => {
   }
 });
 
-$('go-timer').addEventListener('click', () => { if (isCalibrated()) showPage("timer"); });
-$('settings-nav').addEventListener('click', () => showPage("settings"));
 $('home-nav').addEventListener('click', () => showPage(homePage()));
 $('info-nav').addEventListener('click', event => {
   event.stopPropagation();

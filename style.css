@@ -609,3 +609,7 @@ html[data-theme="dark"] .wizard #cloud-timer-percent { color: #93aabb; }
   outline: 3px solid #f1a6ad;
   outline-offset: 2px;
 }
+
+#cloud-timer-percent {
+  display: none !important;
+}

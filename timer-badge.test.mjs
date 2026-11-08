@@ -75,14 +75,13 @@ test("only calls Chrome when what the icon shows changes", () => {
   assert.ok(calls.length > first);
 });
 
-test("the red ! badge is set for a dark room and cleared otherwise", () => {
+test("the dark alert is a dot painted into the icon, not a badge with an exclamation mark", () => {
   calls.length = 0;
   renderTimerBadge(running({ ...counting, screenTime: 2000 }, { label: "dark" }));
-  assert.deepEqual(calls.find(c => c[0] === "text")[1], { text: "!" });
-  assert.deepEqual(calls.find(c => c[0] === "bg")[1], { color: "#d93025" });
-  calls.length = 0;
-  renderTimerBadge(running({ ...counting, screenTime: 2000 }, { label: "bright" }));
-  assert.deepEqual(calls.find(c => c[0] === "text")[1], { text: "" });
+  const badgeTexts = calls.filter(c => c[0] === "text").map(c => c[1].text);
+  assert.deepEqual(badgeTexts, [""]); // never "!"
+  assert.equal(calls.some(c => c[0] === "bg"), false);
+  assert.match(calls.find(c => c[0] === "title")[1].title, /room is dark/i);
 });
 
 test("clearing goes back to the plain tooltip once", () => {
@@ -100,4 +99,19 @@ test("does not throw without chrome.action", () => {
   globalThis.chrome = undefined;
   assert.doesNotThrow(() => { renderTimerBadge(running(counting)); clearTimerBadge(); });
   globalThis.chrome = saved;
+});
+
+test("the cloud outline fills with the screen time used, and is full on a break", () => {
+  assert.equal(badgeFor(running(counting)).ratio, 0);
+  assert.equal(badgeFor(running({ ...counting, screenTime: 10 * 60000 })).ratio, 0.5);
+  assert.equal(badgeFor(running({ ...counting, screenTime: 30 * 60000 })).ratio, 1); // never over 1
+  assert.equal(badgeFor(running({ ...counting, onBreak: true })).ratio, 1);
+  assert.equal(badgeFor(null).ratio, 0);
+});
+
+test("a changing outline repaints the icon even if the time text stayed the same", () => {
+  renderTimerBadge(running({ ...counting, screenTime: 120000, screenLimit: 20 * 60000 }));
+  calls.length = 0;
+  renderTimerBadge(running({ ...counting, screenTime: 120400, screenLimit: 20 * 60000 }));
+  assert.equal(calls.length, 0); // same second, same percent: no repaint
 });
