@@ -49,7 +49,14 @@
 
   <button id="start">Start Tracking</button>
   <button id="stop" disabled>Stop Tracking</button>
-  <button id="calibrate" disabled>Calibrate</button>
+  <button id="calibrate-screen">
+    Record: Looking at screen
+  </button>
+
+  <button id="calibrate-away">
+      Record: Looking away
+  </button>
+  <button id="open-gaze">Open Eye Tracker</button>
   <button id="request-permission">
     Grant Camera Permission
     </button>
@@ -65,4 +72,20 @@
 
   <script type="module" src="./popup.js"></script>
 </body>
+
+
+<div id="eye-timer">
+  <h3>Eye Break Timer ☁️</h3>
+
+  <p id="timer-display">20:00</p>
+
+  <button id="start-timer">
+    Start Timer
+  </button>
+</div>
+
+<script src="timer.js"></script>
+<script src="timer-ui.js"></script>
+
+
 </html>

@@ -1,0 +1,1 @@
+face_landmarker.task goes here after running setup-assets
