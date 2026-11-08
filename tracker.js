@@ -198,10 +198,8 @@ function renderCalibration() {
   const pausing = c.pauseLeftMs > 0;           // between the two automatic steps
   const busyNow = c.active !== null || pausing;
 
-  // Plain buttons, as originally. Progress is shown on the line below them.
-  setDisabled($("calibrate-screen"), !running() || busyNow);
-  setDisabled($("calibrate-away"), !running() || !c.hasScreen || busyNow);
-  setDisabled($("go-timer"), !(c.hasScreen && c.hasAway));
+    setDisabled($("calibrate-screen"), !running() || busyNow);
+    setDisabled($("go-timer"), !(c.hasScreen && c.hasAway));
 
   // The overall bar: step 1 is the first half, step 2 the second half.
   let message;
@@ -220,10 +218,10 @@ function renderCalibration() {
     hint = "Calibration complete! Press Start Timer when you are ready.";
   } else if (c.hasScreen) {
     message = "1 of 2 steps complete";
-    hint = "Press step 2 to record looking away.";
+    hint = "Look away from your screen to complete calibration.";
   } else {
     message = "0 of 2 steps complete";
-    hint = "Look directly at your screen, then press step 1. Step 2 runs by itself.";
+    hint = "Look directly at your screen, then press Calibrate. We'll guide you through both steps.";
   }
   setText($("calibration-message"), message);
   setText($("calibration-hint"), hint);
@@ -289,14 +287,17 @@ $('stop').addEventListener('click', async () => {
   render(null, { fromEngine: false });
 });
 
-// Step 1 starts the automatic run: it fills, pauses a moment, then step 2 fills by itself.
 $('calibrate-screen').addEventListener('click', async () => {
-  render(await ask('ENGINE_CALIBRATE', { kind: 'screen', auto: true }), { fromEngine: false });
-});
+  $('calibration-hint').textContent =
+    "Keep looking directly at your screen.";
 
-// Step 2 on its own (redo just the looking-away part).
-$('calibrate-away').addEventListener('click', async () => {
-  render(await ask('ENGINE_CALIBRATE', { kind: 'away' }), { fromEngine: false });
+  render(
+    await ask('ENGINE_CALIBRATE', {
+      kind: 'screen',
+      auto: true
+    }),
+    { fromEngine: false }
+  );
 });
 
 $('go-timer').addEventListener('click', () => { if (isCalibrated()) showPage("timer"); });
@@ -312,14 +313,6 @@ document.addEventListener('click', event => {
 });
 document.addEventListener('keydown', event => {
   if (event.key === 'Escape') setPrivacyOpen(false);
-});
-document.querySelectorAll('[data-nav]').forEach(button => {
-  button.addEventListener('click', () => {
-    const page = button.dataset.nav;
-    if (page === "timer" && !isCalibrated()) return;
-    if (page === "calibration" && !running()) return;
-    showPage(page);
-  });
 });
 
 // ---- timer length settings (saved in chrome.storage; the service worker tells the engine) ----
