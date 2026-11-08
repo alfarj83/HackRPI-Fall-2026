@@ -7,6 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Head in the Clouds</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="webcam-darkness/lighting.css">
 </head>
 
 <body class="tracker tracker-compact wizard">
@@ -72,13 +73,6 @@
       <div class="preview">
 
         <div class="camera-layer">
-
-          <video
-            id="webcam"
-            autoplay
-            muted
-            playsinline>
-          </video>
 
           <canvas id="overlay"></canvas>
 
@@ -196,6 +190,8 @@
         Camera not started
       </p>
 
+      <p id="light-chip" class="light-chip" data-level="unknown" hidden></p>
+
       <button
         id="recalibrate"
         class="secondary wide">
@@ -227,6 +223,41 @@
           Restart Camera
         </button>
 
+      </div>
+
+      <!-- TIMER LENGTHS -->
+
+      <div class="settings-card">
+        <strong>Timer lengths</strong>
+
+        <label for="screen-minutes">Screen time before a break (minutes)</label>
+        <input id="screen-minutes" type="number" min="20" max="240" step="1">
+        <p class="muted">Minimum 20 minutes. You can only add time.</p>
+
+        <label for="break-seconds">Eye break length (seconds)</label>
+        <input id="break-seconds" type="number" min="20" max="600" step="1">
+        <p class="muted">Minimum 20 seconds. You can only add time.</p>
+
+        <div class="buttons">
+          <button id="save-settings" class="primary">Save</button>
+          <button id="reset-settings" class="secondary">Reset</button>
+        </div>
+        <p id="settings-message" class="muted" role="status"></p>
+      </div>
+
+      <!-- ROOM LIGHTING -->
+
+      <div class="settings-card" id="lighting">
+        <strong>Room lighting</strong>
+        <div id="light-label">UNKNOWN</div>
+        <div id="light-message" data-level="unknown">Checking your room's lighting...</div>
+        <div class="metrics">
+          <div><strong id="light-bg">—</strong><span>Background brightness</span></div>
+          <div><strong id="light-dark">—</strong><span>Dark background</span></div>
+          <div><strong id="light-px">—</strong><span>Background pixels</span></div>
+        </div>
+        <p id="light-status" class="muted">Camera off</p>
+        <button id="notify-open" class="secondary">Notification settings</button>
       </div>
 
       <!-- ATTENTION STATUS -->
@@ -344,7 +375,18 @@
 
   </main>
 
-  <!-- YOUR EXISTING EYE TRACKING SCRIPT -->
+
+  <dialog id="notify-dialog">
+    <h2>Allow notifications?</h2>
+    <p>Head in the Clouds can remind you to turn on a light when your room has been dark for a while. Click Allow and we'll send a test notification, so Chrome and your computer can ask for permission.</p>
+    <p id="notify-result" class="muted"></p>
+    <div class="buttons">
+      <button id="notify-allow" class="primary">Allow notifications</button>
+      <button id="notify-later" class="secondary">Not now</button>
+    </div>
+  </dialog>
+
+  <!-- POPUP SCRIPT (the camera runs in offscreen.html) -->
 
   <script type="module" src="tracker.js"></script>
 
