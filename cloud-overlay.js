@@ -13,7 +13,6 @@
   let leaveTimeout = null;
   let removeTimeout = null;
 
-  // Make clouds leave the screen
   function hideClouds() {
     const host = document.getElementById("eye-break-clouds");
 

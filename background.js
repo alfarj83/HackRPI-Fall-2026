@@ -6,7 +6,6 @@ import { loadPrefs, normalizePrefs, PREFS_KEY } from "./notification-prefs.js";
 
 const CALIBRATION_KEY = "calibrationData";
 
-
 async function notifyTabs(type) {
   const tabs = await chrome.tabs.query({});
 
@@ -65,7 +64,15 @@ chrome.storage.onChanged.addListener((changes, area) => {
     clearBadge();
     resetNotifier();
   }
-  if (before.breaks && !prefs.breaks) void notifyTabs("HIDE_CLOUDS");
+  if (message.type === "TRACKER_BREAK_START") {
+    console.log("Break started: showing clouds");
+    void notifyTabs("SHOW_CLOUDS");
+  }
+
+  if (message.type === "TRACKER_BREAK_END") {
+    console.log("Break ended: hiding clouds");
+    void notifyTabs("HIDE_CLOUDS");
+  }
 });
 
 chrome.runtime.onMessage.addListener((message) => {

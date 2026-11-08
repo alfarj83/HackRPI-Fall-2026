@@ -340,16 +340,9 @@ $('reset-settings').addEventListener('click', async () => {
 });
 loadSettings().then(s => { fillSettings(s); savedLimits = toLimits(s); if (!running()) renderTimers(); });
 
-// ---- alert switches (the service worker reads them from storage) ----
 const lightingToggle = $('notify-lighting-toggle');
-const breaksToggle = $('notify-breaks-toggle');
-loadPrefs().then(p => {
-  lightingToggle.checked = p.lighting;
-  breaksToggle.checked = p.breaks;
-});
-const saveAlertSwitches = () => savePrefs({ lighting: lightingToggle.checked, breaks: breaksToggle.checked });
-lightingToggle.addEventListener('change', saveAlertSwitches);
-breaksToggle.addEventListener('change', saveAlertSwitches);
+loadPrefs().then(p => { lightingToggle.checked = p.lighting; });
+lightingToggle.addEventListener('change', () => savePrefs({ lighting: lightingToggle.checked }));
 
 // ---- light / dark mode (theme.js applies the saved choice before the page paints) ----
 const THEME_KEY = 'headInTheClouds.theme';
