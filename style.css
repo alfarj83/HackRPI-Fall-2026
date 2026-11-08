@@ -153,6 +153,11 @@ button:disabled {
   align-items: center;
 }
 
+.metrics {
+    max-width: 340px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
 .wizard .hero-cloud img {
   width: 145px;
   max-width: 100%;
