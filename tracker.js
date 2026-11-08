@@ -200,7 +200,6 @@ function renderCalibration() {
 
   // Plain buttons, as originally. Progress is shown on the line below them.
   setDisabled($("calibrate-screen"), !running() || busyNow);
-  setDisabled($("calibrate-away"), !running() || !c.hasScreen || busyNow);
   setDisabled($("go-timer"), !(c.hasScreen && c.hasAway));
 
   // The overall bar: step 1 is the first half, step 2 the second half.
@@ -220,10 +219,10 @@ function renderCalibration() {
     hint = "Calibration complete! Press Start Timer when you are ready.";
   } else if (c.hasScreen) {
     message = "1 of 2 steps complete";
-    hint = "Press step 2 to record looking away.";
+    hint = "Look away from your screen. The second step starts automatically.";
   } else {
     message = "0 of 2 steps complete";
-    hint = "Look directly at your screen, then press step 1. Step 2 runs by itself.";
+    hint = "Look directly at your screen, then press Calibrate.";
   }
   setText($("calibration-message"), message);
   setText($("calibration-hint"), hint);
@@ -289,18 +288,26 @@ $('stop').addEventListener('click', async () => {
   render(null, { fromEngine: false });
 });
 
-// Step 1 starts the automatic run: it fills, pauses a moment, then step 2 fills by itself.
 $('calibrate-screen').addEventListener('click', async () => {
-  render(await ask('ENGINE_CALIBRATE', { kind: 'screen', auto: true }), { fromEngine: false });
+  $('calibration-hint').textContent =
+    "Keep looking directly at your screen.";
+
+  const next = await ask('ENGINE_CALIBRATE', {
+    kind: 'screen',
+    auto: true
+  });
+
+  render(next, { fromEngine: false });
 });
 
-// Step 2 on its own (redo just the looking-away part).
-$('calibrate-away').addEventListener('click', async () => {
-  render(await ask('ENGINE_CALIBRATE', { kind: 'away' }), { fromEngine: false });
+$('go-timer').addEventListener('click', () => {
+  if (isCalibrated()) showPage("timer");
 });
 
-$('go-timer').addEventListener('click', () => { if (isCalibrated()) showPage("timer"); });
-$('settings-nav').addEventListener('click', () => showPage("settings"));
+$('settings-nav').addEventListener('click', () => {
+  showPage('settings');
+});
+
 $('home-nav').addEventListener('click', () => showPage(homePage()));
 $('info-nav').addEventListener('click', event => {
   event.stopPropagation();
