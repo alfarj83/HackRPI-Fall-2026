@@ -13,11 +13,13 @@
     "tabs",
     "notifications",
     "offscreen",
-    "scripting"
+    "scripting",
+    "activeTab"
   ],
   "host_permissions": [
     "http://*/*",
-    "https://*/*"
+    "https://*/*",
+    "https://headcloud-api.headcloud-dev.workers.dev/*"
   ],
   "background": {
 

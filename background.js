@@ -88,6 +88,22 @@ chrome.runtime.onMessage.addListener((message) => {
   }
 });
 
+// The content-script overlay is anchored to one user-selected page.
+let calibrationTabId = null;
+async function cancelPageCalibration() {
+  const id = calibrationTabId;
+  calibrationTabId = null;
+  if (id === null || !(await hasOffscreen())) return;
+  try { await chrome.runtime.sendMessage({ type: 'ENGINE_CALIBRATE_CANCEL' }); }
+  catch (error) { console.warn('Could not cancel abandoned calibration:', error); }
+}
+chrome.tabs.onRemoved.addListener(tabId => {
+  if (tabId === calibrationTabId) void cancelPageCalibration();
+});
+chrome.tabs.onUpdated.addListener((tabId, changes) => {
+  if (tabId === calibrationTabId && changes.status === 'loading') void cancelPageCalibration();
+});
+
 // ---- Background engine (offscreen document) ----
 // The engine runs the camera and detection in a hidden page. Offscreen pages only get
 // chrome.runtime, so this service worker applies the badge and notification.
@@ -143,9 +159,33 @@ let lastEngineState = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message?.type) {
+    case 'HEADCLOUD_CALIBRATION_REGISTER': {
+      // Only a content script in the explicitly injected top frame can register.
+      if (!sender.tab?.id || sender.frameId !== 0) {
+        sendResponse({ error: 'Calibration must run in a regular tab.' });
+        return false;
+      }
+      if (calibrationTabId !== null && calibrationTabId !== sender.tab.id) {
+        sendResponse({ error: 'Calibration is already open in another tab.' });
+        return false;
+      }
+      calibrationTabId = sender.tab.id;
+      sendResponse({ ok: true });
+      return false;
+    }
+    case 'HEADCLOUD_CALIBRATION_UNREGISTER': {
+      if (sender.tab?.id === calibrationTabId) calibrationTabId = null;
+      sendResponse({ ok: true });
+      return false;
+    }
     // Snapshot from the offscreen engine.
     case "ENGINE_STATE": {
       lastEngineState = message.state;
+      if (calibrationTabId !== null) {
+        const targetTab = calibrationTabId;
+        chrome.tabs.sendMessage(targetTab, { type: 'HEADCLOUD_ENGINE_STATE', state: message.state })
+          .catch(() => {});
+      }
       prefsLoaded.then(() => {
         // The toolbar icon shows the timer (or a red "!" when the room is dark).
         renderTimerBadge(message.state, { showDark: prefs.lighting });
@@ -180,12 +220,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             );
             return;
           }
-          if (message.command === "ENGINE_GET_STATE" && !(await hasOffscreen())) {
+          if ((message.command === "ENGINE_GET_STATE" ||
+               message.command === "ENGINE_CALIBRATE_CANCEL") && !(await hasOffscreen())) {
             sendResponse(null);
             return;
           }
           await ensureOffscreen();
-          await pushSettings();
+          if (message.command !== 'ENGINE_GET_STATE') await pushSettings();
+          // Forward guided calibration and cancel just like the existing engine commands.
+          // Never put camera frames or landmark data into extension storage.
           const payload = { type: message.command, kind: message.kind, auto: message.auto };
           if (message.command === "ENGINE_START") {
             const stored = await chrome.storage.local.get(CALIBRATION_KEY);

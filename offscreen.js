@@ -38,7 +38,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       sendResponse(engine.stop());
       return false;
     case "ENGINE_CALIBRATE":
+      // Both legacy two-stage and guided calibration use this route.
       sendResponse(engine.calibrate(message.kind, { auto: Boolean(message.auto) }));
+      return false;
+    case "ENGINE_CALIBRATE_CANCEL":
+      sendResponse(engine.cancelGuided());
       return false;
     case "ENGINE_PREVIEW_REQUEST":
       engine.requestPreview();
