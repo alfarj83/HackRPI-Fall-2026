@@ -8,6 +8,7 @@
   <title>Head in the Clouds</title>
   <script src="theme.js"></script>
   <link rel="stylesheet" href="style.css?v=geist9">
+  <link rel="stylesheet" href="cloud-timer.css">
   <link rel="stylesheet" href="webcam-darkness/lighting.css">
 </head>
 
@@ -51,15 +52,17 @@
 
 
 
+    <!-- Single animated cloud shared by setup, timer, and settings -->
+    <section class="shared-cloud-section" aria-label="Animated cloud timer">
+      <div id="cloud-timer-mount"></div>
+      <p id="cloud-timer-percent">0% complete</p>
+    </section>
+
     <!-- PAGE 1: CAMERA PERMISSION -->
 
     <section id="page-permission" class="app-page">
 
       <div class="welcome-content">
-
-        <div class="hero-cloud">
-          <img src="Images/cloud.png" alt="Cloud">
-        </div>
 
         <h1>Welcome!</h1>
 
@@ -151,12 +154,6 @@
     <section id="page-timer" class="app-page" hidden>
 
       <div class="timer-hero">
-
-        <div class="timer-cloud">
-          <img
-            src="Images/cloud.png"
-            alt="Your cloud">
-        </div>
 
         <div id="screen-timer" class="countdown">
           20:00
@@ -296,6 +293,7 @@
 
   <!-- POPUP SCRIPT (the camera runs in offscreen.html) -->
 
+  <script src="cloud-timer.js"></script>
   <script type="module" src="tracker.js"></script>
 
 </body>

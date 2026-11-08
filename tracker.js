@@ -172,6 +172,12 @@ function renderTimers() {
   const t = state?.timers || { ...savedLimits, screenTime: 0, awayTime: 0, onBreak: false };
   const onBreak = Boolean(t.onBreak);
 
+  // The layered cloud shares this background engine timer; it does not create a second clock.
+  const cloudRatio = t.screenLimit > 0
+    ? (onBreak ? 1 : Math.max(0, Math.min(1, t.screenTime / t.screenLimit)))
+    : 0;
+  window.updateCloudTimer?.(cloudRatio);
+
   setText($("screen-timer"), formatTime(Math.ceil(Math.max(0, t.screenLimit - t.screenTime) / 1000) * 1000));
   setText($("timer-caption"), onBreak ? "Look away from your screen" : "Until your next eye break");
 
