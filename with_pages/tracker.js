@@ -6,12 +6,43 @@ const AWAY_LIMIT = 20 * 1000;
 
 let screenTime = 0;
 let awayTime = 0;
+let onBreak = false;
+let hasScreenCalibration = false;
+let hasAwayCalibration = false;
+let activeCalibration = null;
+const pages = ["permission", "calibration", "timer", "settings"];
 
 let currentAttentionState = "unknown";
 let lastTimerUpdate = null;
 let lastPredictionTime = null;
 
 const $ = id => document.getElementById(id);
+
+function showPage(page) {
+  if (!pages.includes(page)) return;
+  for (const name of pages) {
+    $("page-" + name).hidden = name !== page;
+  }
+  document.querySelectorAll("[data-nav]").forEach(button => {
+    button.classList.toggle("active", button.dataset.nav === page);
+  });
+}
+
+function setCalibrationControls() {
+  $("calibrate-screen").disabled = !running || activeCalibration !== null;
+  $("calibrate-away").disabled = !running || !hasScreenCalibration || activeCalibration !== null;
+  $("go-timer").disabled = !hasScreenCalibration || !hasAwayCalibration;
+  const completed = Number(hasScreenCalibration) + Number(hasAwayCalibration);
+  $("calibration-message").textContent = `${completed} of 2 steps complete`;
+  $("calibration-bar").style.width = `${completed * 50}%`;
+}
+
+function sendBreak(type) {
+  chrome.runtime.sendMessage({ type }).catch(error => {
+    console.warn("Cloud message failed:", error);
+  });
+}
+
 const video = $('webcam'), canvas = $('overlay'), ctx = canvas.getContext('2d');
 const inputCanvas = document.createElement('canvas');
 const inputCtx = inputCanvas.getContext('2d', {
@@ -36,6 +67,26 @@ function renderDiagnostics(result, prediction) {
   $('head-y').textContent = fmt(f?.headY);
   $('gaze-x').textContent = fmt(f?.gazeX);
   $('gaze-y').textContent = fmt(f?.gazeY);
+  $("tracking-indicator").textContent = labels[prediction.state] || prediction.state;
+  if (activeCalibration && prediction.state === "calibrating") {
+    const sampleCount = Math.min(30, prediction.progress || 0);
+    const completed = Number(hasScreenCalibration) + Number(hasAwayCalibration);
+    $("calibration-message").textContent = `Recording ${activeCalibration}: ${sampleCount}/30 samples`;
+    $("calibration-bar").style.width = `${(completed * 30 + sampleCount) / 60 * 100}%`;
+
+    if (sampleCount >= 30) {
+      if (activeCalibration === "screen") hasScreenCalibration = true;
+      if (activeCalibration === "away") hasAwayCalibration = true;
+      activeCalibration = null;
+      setCalibrationControls();
+      if (hasScreenCalibration && hasAwayCalibration) {
+        $("calibration-hint").textContent = "Calibration complete!";
+        showPage("timer");
+      } else {
+        $("calibration-hint").textContent = "Great! Now look away and record that position.";
+      }
+    }
+  }
   $('progress').textContent =
     prediction.state === "calibrating"
         ? `${prediction.progress}/30`
@@ -144,14 +195,18 @@ function formatTime(milliseconds) {
 }
 
 function updateTimerDisplay() {
-    $("screen-timer").textContent = formatTime(screenTime);
-    $("away-timer").textContent = formatTime(awayTime);
+    // The tracker owns both clocks; timer.js is no longer needed.
+    $("screen-timer").textContent = formatTime(Math.ceil(Math.max(0, SCREEN_LIMIT - screenTime) / 1000) * 1000);
+    $("away-timer").textContent = formatTime(onBreak
+        ? Math.ceil(Math.max(0, AWAY_LIMIT - awayTime) / 1000) * 1000
+        : awayTime);
 
-    $("screen-progress").style.width =
-        `${(screenTime / SCREEN_LIMIT) * 100}%`;
-
-    $("away-progress").style.width =
-        `${(awayTime / AWAY_LIMIT) * 100}%`;
+    $("screen-progress").style.width = `${Math.min(100, screenTime / SCREEN_LIMIT * 100)}%`;
+    $("away-progress").style.width = `${Math.min(100, awayTime / AWAY_LIMIT * 100)}%`;
+    $("timer-heading").textContent = onBreak ? "Time to look away!" : "Time to focus.";
+    $("timer-description").textContent = onBreak
+        ? "Look away until your 20-second break finishes."
+        : "Your next break starts after 20 minutes of detected screen viewing.";
 }
 
 function updateTimers(now) {
@@ -160,37 +215,44 @@ function updateTimers(now) {
         updateTimerDisplay();
         return;
     }
-
     const delta = Math.max(0, now - lastTimerUpdate);
     lastTimerUpdate = now;
-
-    // Do not count time if the browser tab is hidden
-    // or the latest classification is stale.
-    const predictionIsFresh =
-        lastPredictionTime !== null &&
-        now - lastPredictionTime < 500;
-
-    if (document.hidden || !predictionIsFresh) {
+    const predictionIsFresh = lastPredictionTime !== null && now - lastPredictionTime < 500;
+    // Preserve existing policy: don't count while tracker page is hidden or inference is stale.
+    if (document.hidden || !predictionIsFresh || !running) {
         updateTimerDisplay();
         return;
     }
-
-    if (currentAttentionState === "likely-screen") {
-        screenTime = (screenTime + delta) % SCREEN_LIMIT;
-    } else if (currentAttentionState === "likely-away") {
-        awayTime = (awayTime + delta) % AWAY_LIMIT;
+    if (onBreak) {
+        if (currentAttentionState === "likely-away") {
+            awayTime = Math.min(AWAY_LIMIT, awayTime + delta);
+            if (awayTime >= AWAY_LIMIT) {
+                onBreak = false;
+                screenTime = 0;
+                awayTime = 0;
+                sendBreak("TRACKER_BREAK_END");
+            }
+        }
+    } else if (currentAttentionState === "likely-screen") {
+        screenTime = Math.min(SCREEN_LIMIT, screenTime + delta);
+        awayTime = 0;
+        if (screenTime >= SCREEN_LIMIT) {
+            onBreak = true;
+            awayTime = 0;
+            sendBreak("TRACKER_BREAK_START");
+        }
     }
-
     updateTimerDisplay();
 }
 
 function resetTimers() {
+    if (onBreak) sendBreak("TRACKER_BREAK_END");
+    onBreak = false;
     screenTime = 0;
     awayTime = 0;
     currentAttentionState = "unknown";
     lastTimerUpdate = null;
     lastPredictionTime = null;
-
     updateTimerDisplay();
 }
 
@@ -292,9 +354,12 @@ async function start() {
     running = true;
 
     $('stop').disabled = false;
-    $('calibrate-screen').disabled = false;
-    $('calibrate-away').disabled = false;
-    $('status').textContent = 'Camera running. Look at your screen, then click Calibrate.';
+    $('status').textContent = 'Camera enabled.';
+    hasScreenCalibration = false;
+    hasAwayCalibration = false;
+    activeCalibration = null;
+    setCalibrationControls();
+    showPage("calibration");
     
     raf = requestAnimationFrame(loop);
   } catch(error) {
@@ -319,29 +384,63 @@ function stop(showMessage = true) {
   $('calibrate-screen').disabled = true;
   $('calibrate-away').disabled = true;
   $('attention').textContent = 'Unknown';
+  if (onBreak) {
+    onBreak = false;
+    sendBreak("TRACKER_BREAK_END");
+  }
   if (showMessage) $('status').textContent = 'Camera off';
 
   currentAttentionState = "unknown";
   lastTimerUpdate = null;
   lastPredictionTime = null;
+  setCalibrationControls();
 }
 $('start').addEventListener('click', start);
 
 $('stop').addEventListener('click', () => stop());
 
 $('calibrate-screen').addEventListener('click', () => {
-    detector.beginCalibration("screen");
-    $('status').textContent =
-        "Recording screen-viewing examples. " +
-        "Keep your eyes on the screen.";
+  if (!running) return;
+  activeCalibration = "screen";
+  hasScreenCalibration = false;
+  hasAwayCalibration = false;
+  detector.beginCalibration("screen");
+  setCalibrationControls();
+  $('calibration-hint').textContent = "Keep looking at your normal screen-reading area.";
 });
 
 $('calibrate-away').addEventListener('click', () => {
-    detector.beginCalibration("away");
-    $('status').textContent =
-        "Recording looking-away examples. " +
-        "Look beyond the monitor.";
+  if (!running || !hasScreenCalibration) return;
+  activeCalibration = "away";
+  hasAwayCalibration = false;
+  detector.beginCalibration("away");
+  setCalibrationControls();
+  $('calibration-hint').textContent = "Look away from the screen and hold that position.";
 });
+
+$('go-timer').addEventListener('click', () => {
+  if (hasScreenCalibration && hasAwayCalibration) showPage("timer");
+});
+$('recalibrate').addEventListener('click', () => showPage("calibration"));
+$('settings-nav').addEventListener('click', () => showPage("settings"));
+$('back-to-timer').addEventListener('click', () => {
+  showPage(running && hasScreenCalibration && hasAwayCalibration ? "timer" : "permission");
+});
+$('restart-camera').addEventListener('click', () => {
+  stop();
+  showPage("permission");
+});
+document.querySelectorAll('[data-nav]').forEach(button => {
+  button.addEventListener('click', () => {
+    const page = button.dataset.nav;
+    if (page === "timer" && !(running && hasScreenCalibration && hasAwayCalibration)) return;
+    if (page === "calibration" && !running) return;
+    showPage(page);
+  });
+});
+
+showPage("permission");
+updateTimerDisplay();
 
 window.addEventListener('pagehide', () => {
   disposed = true;

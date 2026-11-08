@@ -1,0 +1,352 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Head in the Clouds</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="tracker tracker-compact wizard">
+
+  <main>
+
+    <!-- HEADER -->
+
+    <header class="topbar">
+      <div class="brand">
+        ☁ Head in the Clouds
+      </div>
+
+      <button id="settings-nav" class="icon-button"
+              aria-label="Settings">
+        ⚙
+      </button>
+    </header>
+
+
+    <!-- PAGE 1: CAMERA PERMISSION -->
+
+    <section id="page-permission" class="app-page">
+
+      <div class="welcome-content">
+
+        <div class="hero-cloud">
+          <img src="Images/cloud.png" alt="Cloud">
+        </div>
+
+        <h1>Welcome!</h1>
+
+        <p class="intro">
+          Enable your camera to get started.
+        </p>
+
+        <button id="start" class="primary wide">
+          Enable Camera
+        </button>
+
+        <p id="status" role="status">
+          Camera off
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <!-- PAGE 2: CAMERA CALIBRATION -->
+
+    <section id="page-calibration" class="app-page" hidden>
+
+      <h1>Calibrate</h1>
+
+      <p class="intro">
+        Let's help your cloud recognize
+        when you're looking at your screen.
+      </p>
+
+      <!-- CAMERA PREVIEW -->
+
+      <div class="preview">
+
+        <div class="camera-layer">
+
+          <video
+            id="webcam"
+            autoplay
+            muted
+            playsinline>
+          </video>
+
+          <canvas id="overlay"></canvas>
+
+        </div>
+
+      </div>
+
+      <!-- CALIBRATION INSTRUCTIONS -->
+
+      <p id="calibration-hint" class="hint">
+        Look directly at your screen.
+      </p>
+
+      <button
+        id="calibrate-screen"
+        class="primary wide"
+        disabled>
+        1. Looking at Screen
+      </button>
+
+      <button
+        id="calibrate-away"
+        class="secondary wide"
+        disabled>
+        2. Looking Away
+      </button>
+
+      <!-- CALIBRATION PROGRESS -->
+
+      <div class="timer-track">
+        <div
+          id="calibration-bar"
+          class="timer-fill">
+        </div>
+      </div>
+
+      <p id="calibration-message">
+        0 of 2 steps complete
+      </p>
+
+      <button
+        id="go-timer"
+        class="primary wide"
+        disabled>
+        Continue to Timer
+      </button>
+
+    </section>
+
+
+    <!-- PAGE 3: CLOUD TIMER -->
+
+    <section id="page-timer" class="app-page" hidden>
+
+      <h1 id="timer-heading">
+        Time to focus.
+      </h1>
+
+      <p id="timer-description" class="intro">
+        Your next break starts after
+        20 minutes of screen time.
+      </p>
+
+      <!-- CLOUD AND COUNTDOWN -->
+
+      <div class="timer-hero">
+
+        <div class="timer-cloud">
+          <img
+            src="Images/cloud.png"
+            alt="Your cloud">
+        </div>
+
+        <div id="screen-timer" class="countdown">
+          20:00
+        </div>
+
+        <p class="timer-caption">
+          Until your next eye break
+        </p>
+
+      </div>
+
+      <!-- SCREEN PROGRESS -->
+
+      <div class="timer-track">
+        <div
+          id="screen-progress"
+          class="timer-fill">
+        </div>
+      </div>
+
+      <!-- LOOKING AWAY TIMER -->
+
+      <div class="break-row">
+
+        <span>Looking Away</span>
+
+        <strong id="away-timer">
+          00:00
+        </strong>
+
+      </div>
+
+      <div class="timer-track">
+        <div
+          id="away-progress"
+          class="timer-fill away-fill">
+        </div>
+      </div>
+
+      <!-- TRACKING STATUS -->
+
+      <p id="tracking-indicator" class="hint">
+        Camera not started
+      </p>
+
+      <button
+        id="recalibrate"
+        class="secondary wide">
+        Recalibrate Camera
+      </button>
+
+    </section>
+
+
+    <!-- PAGE 4: SETTINGS -->
+
+    <section id="page-settings" class="app-page" hidden>
+
+      <h1>Settings</h1>
+
+      <p class="intro">
+        Camera and tracking information.
+      </p>
+
+      <!-- CAMERA CONTROLS -->
+
+      <div class="buttons">
+
+        <button id="stop" disabled>
+          Stop Camera
+        </button>
+
+        <button id="restart-camera">
+          Restart Camera
+        </button>
+
+      </div>
+
+      <!-- ATTENTION STATUS -->
+
+      <div class="settings-card">
+
+        <strong>Attention Status</strong>
+
+        <h2 id="attention">
+          Unknown
+        </h2>
+
+      </div>
+
+      <!-- TRACKING DIAGNOSTICS -->
+
+      <details
+        class="tracker-section"
+        id="diagnostics-section">
+
+        <summary>
+          Tracking Diagnostics
+        </summary>
+
+        <div class="section-content">
+
+          <div class="metrics">
+
+            <div>
+              <strong id="faces">0</strong>
+              <span>Faces</span>
+            </div>
+
+            <div>
+              <strong id="landmarks">0</strong>
+              <span>Landmarks</span>
+            </div>
+
+            <div>
+              <strong id="head-x">—</strong>
+              <span>Head Offset X</span>
+            </div>
+
+            <div>
+              <strong id="head-y">—</strong>
+              <span>Head Offset Y</span>
+            </div>
+
+            <div>
+              <strong id="gaze-x">—</strong>
+              <span>Iris Ratio X</span>
+            </div>
+
+            <div>
+              <strong id="gaze-y">—</strong>
+              <span>Iris Ratio Y</span>
+            </div>
+
+            <div>
+              <strong id="delta">—</strong>
+              <span>Deviation</span>
+            </div>
+
+            <div>
+              <strong id="progress">—</strong>
+              <span>Calibration</span>
+            </div>
+
+          </div>
+
+          <p id="detail" class="muted">
+            No gaze estimate yet.
+          </p>
+
+          <p class="muted">
+            Eye tracking is an estimate and
+            can be affected by lighting,
+            glasses and camera position.
+          </p>
+
+        </div>
+
+      </details>
+
+      <button
+        id="back-to-timer"
+        class="primary wide">
+        Back to Timer
+      </button>
+
+    </section>
+
+
+    <!-- BOTTOM PAGE NAVIGATION -->
+
+    <nav class="bottom-nav">
+
+      <button data-nav="permission">
+        Camera
+      </button>
+
+      <button data-nav="calibration">
+        Calibrate
+      </button>
+
+      <button data-nav="timer">
+        Timer
+      </button>
+
+      <button data-nav="settings">
+        Settings
+      </button>
+
+    </nav>
+
+  </main>
+
+  <!-- YOUR EXISTING EYE TRACKING SCRIPT -->
+
+  <script type="module" src="tracker.js"></script>
+
+</body>
+</html>

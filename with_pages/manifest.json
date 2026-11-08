@@ -3,7 +3,7 @@
   "manifest_version": 3,
   "name": "Head in the Clouds",
   "version": "0.1.0",
-  "description": "Local eye tracking and eye break reminders using MediaPipe Face Landmarker.",
+  "description": "Eye tracking and cloud break reminders.",
 
   "action": {
     "default_popup": "tracker.html"
