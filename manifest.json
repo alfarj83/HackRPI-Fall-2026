@@ -6,6 +6,7 @@
   "action": {
     "default_popup": "tracker.html"
   },
+
   "permissions": [
     "storage",
     "alarms",
@@ -19,6 +20,7 @@
     "https://*/*"
   ],
   "background": {
+
     "service_worker": "background.js",
     "type": "module"
   },

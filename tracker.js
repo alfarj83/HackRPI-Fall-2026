@@ -172,6 +172,12 @@ function renderTimers() {
   const t = state?.timers || { ...savedLimits, screenTime: 0, awayTime: 0, onBreak: false };
   const onBreak = Boolean(t.onBreak);
 
+  // The layered cloud shares this background engine timer; it does not create a second clock.
+  const cloudRatio = t.screenLimit > 0
+    ? (onBreak ? 1 : Math.max(0, Math.min(1, t.screenTime / t.screenLimit)))
+    : 0;
+  window.updateCloudTimer?.(cloudRatio);
+
   setText($("screen-timer"), formatTime(Math.ceil(Math.max(0, t.screenLimit - t.screenTime) / 1000) * 1000));
   setText($("timer-caption"), onBreak ? "Look away from your screen" : "Until your next eye break");
 
@@ -360,6 +366,50 @@ toggle.addEventListener('change', () => {
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem(THEME_KEY, theme); } catch (error) { /* storage blocked: applies this session only */ }
 });
+
+
+// ---- full reset: return to first-time setup ----
+$('reset-everything').addEventListener('click', async () => {
+  const confirmed = window.confirm(
+    'Reset Head in the Clouds?\n\n' +
+    'This will stop tracking, delete your saved calibration ' +
+    'and settings, and return you to the beginning.'
+  );
+
+  if (!confirmed) return;
+
+  const button = $('reset-everything');
+  const message = $('reset-everything-message');
+
+  button.disabled = true;
+  message.textContent = 'Resetting everything...';
+
+  try {
+    // Stop the camera and background engine first.
+    const result = await ask('ENGINE_STOP');
+
+    if (result?.error) {
+      throw new Error(result.error);
+    }
+
+    // Forget all extension data saved in chrome.storage.local.
+    await chrome.storage.local.clear();
+
+    // Forget the saved appearance setting.
+    localStorage.removeItem('headInTheClouds.theme');
+
+    // Restart the popup. Without a saved calibration,
+    // the existing startup code opens the Welcome screen.
+    window.location.reload();
+
+  } catch (error) {
+    console.error('Full reset failed:', error);
+    message.textContent =
+      `Could not finish resetting: ${error.message}`;
+    button.disabled = false;
+  }
+});
+
 
 // ---- saved setup ----
 function readSavedSetup(stored) {

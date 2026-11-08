@@ -562,3 +562,50 @@ html[data-theme="dark"] .wizard .privacy-panel { background: #1a2733; color: #cf
 
 /* The preview is repainted several times a second; keep it on its own layer. */
 .wizard .camera-layer canvas { will-change: contents; }
+
+
+/* Single layered cloud stays visible throughout the one-time setup and timer UI. */
+.wizard .shared-cloud-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 auto 6px;
+  text-align: center;
+}
+.wizard .shared-cloud-section #cloud-timer-mount {
+  width: 180px;
+  max-width: 100%;
+}
+.wizard .shared-cloud-section #cloud-timer-percent {
+  margin: -2px 0 0;
+  font-size: 12px;
+  color: #67879c;
+}
+.wizard .welcome-content { padding-top: 10px; }
+.wizard .timer-hero { margin-top: 8px; }
+html[data-theme="dark"] .wizard #cloud-timer-percent { color: #93aabb; }
+
+
+/* Full reset button in Settings */
+.wizard .danger-button {
+  background: #c94b55;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wizard .danger-button:hover {
+  background: #ad3542;
+}
+
+.wizard .danger-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wizard .danger-button:focus-visible {
+  outline: 3px solid #f1a6ad;
+  outline-offset: 2px;
+}
