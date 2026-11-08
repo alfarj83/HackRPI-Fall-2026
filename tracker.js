@@ -1,7 +1,7 @@
 import { FaceLandmarker, FilesetResolver, DrawingUtils } from './vendor/vision_bundle.mjs';
 import { AttentionDetector } from './attention.js';
 
-const SCREEN_LIMIT = 20 * 60 * 1000;
+const SCREEN_LIMIT = 0.2 * 60 * 1000;
 const AWAY_LIMIT = 20 * 1000;
 
 let screenTime = 0;
