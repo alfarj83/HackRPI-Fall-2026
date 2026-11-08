@@ -1,6 +1,10 @@
 import { updateBadge, clearBadge } from "./webcam-darkness/badge.js";
 import { maybeNotify, resetNotifier } from "./webcam-darkness/notifier.js";
 import { loadSettings, toLimits, STORAGE_KEY } from "./settings.js";
+import { sanitizeCalibration } from "./engine/calibration.js";
+import { loadPrefs, normalizePrefs, PREFS_KEY } from "./notification-prefs.js";
+
+const CALIBRATION_KEY = "calibrationData";
 
 
 async function notifyTabs(type) {
@@ -47,11 +51,32 @@ async function notifyTabs(type) {
   }
 }
 
+// Alert switches from Settings. Cached so the 5-per-second engine updates do not each
+// read storage. The service worker can restart, so the cache reloads from storage.
+let prefs = normalizePrefs(null);
+const prefsLoaded = loadPrefs().then(p => { prefs = p; });
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !changes[PREFS_KEY]) return;
+  const before = prefs;
+  prefs = normalizePrefs(changes[PREFS_KEY].newValue);
+  // Switching an alert off also takes down what is already showing.
+  if (before.lighting && !prefs.lighting) {
+    clearBadge();
+    resetNotifier();
+  }
+  if (before.breaks && !prefs.breaks) void notifyTabs("HIDE_CLOUDS");
+});
+
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === "TRACKER_BREAK_START") {
-    void notifyTabs("SHOW_CLOUDS");
+    // Break reminders can be switched off; the break itself still counts down.
+    prefsLoaded.then(() => {
+      if (prefs.breaks) void notifyTabs("SHOW_CLOUDS");
+    });
   }
 
+  // Always hide, so an overlay is never left stuck on screen.
   if (message.type === "TRACKER_BREAK_END") {
     void notifyTabs("HIDE_CLOUDS");
   }
@@ -115,8 +140,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       lastEngineState = message.state;
       const lighting = message.state?.lighting?.state;
       if (message.state?.running && lighting) {
-        updateBadge(lighting);
-        maybeNotify(lighting);
+        prefsLoaded.then(() => {
+          if (!prefs.lighting) return;
+          updateBadge(lighting);
+          maybeNotify(lighting);
+        });
       }
       return false;
     }
@@ -137,20 +165,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse(stopped);
             return;
           }
+          if (message.command === "ENGINE_CLEAR_CALIBRATION") {
+            await chrome.storage.local.remove(CALIBRATION_KEY);
+            sendResponse(
+              (await hasOffscreen())
+                ? await chrome.runtime.sendMessage({ type: "ENGINE_CLEAR_CALIBRATION" })
+                : null
+            );
+            return;
+          }
           if (message.command === "ENGINE_GET_STATE" && !(await hasOffscreen())) {
             sendResponse(null);
             return;
           }
           await ensureOffscreen();
           await pushSettings();
-          sendResponse(
-            await chrome.runtime.sendMessage({ type: message.command, kind: message.kind })
-          );
+          const payload = { type: message.command, kind: message.kind, auto: message.auto };
+          if (message.command === "ENGINE_START") {
+            const stored = await chrome.storage.local.get(CALIBRATION_KEY);
+            payload.calibration = stored[CALIBRATION_KEY] || null;
+          }
+          sendResponse(await chrome.runtime.sendMessage(payload));
         } catch (error) {
           sendResponse({ error: error.message });
         }
       })();
       return true;
+    }
+    // The engine finished calibration: keep it so setup is a one-time step.
+    case "CALIBRATION_SAVE": {
+      const samples = sanitizeCalibration(message.samples);
+      if (samples) chrome.storage.local.set({ [CALIBRATION_KEY]: { samples, savedAt: Date.now() } });
+      return false;
     }
     default:
       return false;

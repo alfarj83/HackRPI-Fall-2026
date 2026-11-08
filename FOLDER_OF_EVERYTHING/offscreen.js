@@ -11,6 +11,10 @@ const engine = createEngine({
       .sendMessage({ type: kind === "start" ? "TRACKER_BREAK_START" : "TRACKER_BREAK_END" })
       .catch(() => {});
   },
+  onCalibrated: samples => {
+    // The service worker stores it, so setup only has to be done once.
+    chrome.runtime.sendMessage({ type: "CALIBRATION_SAVE", samples }).catch(() => {});
+  },
   onPreview: image => {
     chrome.runtime.sendMessage({ type: "ENGINE_PREVIEW", image }).catch(() => {});
   },
@@ -24,13 +28,16 @@ const engine = createEngine({
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message?.type) {
     case "ENGINE_START":
-      engine.start().then(sendResponse);
+      engine.start(message.calibration).then(sendResponse);
       return true;
+    case "ENGINE_CLEAR_CALIBRATION":
+      sendResponse(engine.clearCalibration());
+      return false;
     case "ENGINE_STOP":
       sendResponse(engine.stop());
       return false;
     case "ENGINE_CALIBRATE":
-      sendResponse(engine.calibrate(message.kind));
+      sendResponse(engine.calibrate(message.kind, { auto: Boolean(message.auto) }));
       return false;
     case "ENGINE_PREVIEW_REQUEST":
       engine.requestPreview();
