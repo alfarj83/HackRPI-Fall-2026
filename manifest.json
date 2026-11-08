@@ -4,7 +4,8 @@
   "name": "Head in the Clouds",
   "version": "0.1.0",
   "description": "Local, calibrated screen-direction estimate using MediaPipe Face Landmarker.",
-  "action": {"default_popup": "popup.html"},
+  "action": {
+  "default_popup": "tracker.html"},
   "content_security_policy": {
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';"
   }
