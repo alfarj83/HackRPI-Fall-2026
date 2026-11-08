@@ -7,9 +7,10 @@ const engine = createEngine({
   modelUrl: chrome.runtime.getURL("models/face_landmarker.task"),
   onBreak: kind => {
     // The service worker turns these into the cloud overlay on every tab.
+    console.log("[engine] break", kind);
     chrome.runtime
       .sendMessage({ type: kind === "start" ? "TRACKER_BREAK_START" : "TRACKER_BREAK_END" })
-      .catch(() => {});
+      .catch(error => console.warn("[engine] break message failed:", error));
   },
   onCalibrated: samples => {
     // The service worker stores it, so setup only has to be done once.

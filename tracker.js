@@ -328,7 +328,7 @@ $('save-settings').addEventListener('click', async () => {
   await saveSettings(clean);
   fillSettings(clean);
   savedLimits = toLimits(clean);
-  $('settings-message').textContent = raised ? 'Saved. Values below the minimum were raised to 20.' : 'Saved.';
+  $('settings-message').textContent = raised ? 'Saved. Values below the smallest allowed (0.1 minutes, 1 second) were raised to it.' : 'Saved.';
   if (!running()) renderTimers();
 });
 $('reset-settings').addEventListener('click', async () => {

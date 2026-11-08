@@ -1,6 +1,6 @@
-import { updateBadge, clearBadge } from "./webcam-darkness/badge.js";
+import { renderTimerBadge, clearTimerBadge } from "./timer-badge.js";
 import { maybeNotify, resetNotifier } from "./webcam-darkness/notifier.js";
-import { loadSettings, toLimits, STORAGE_KEY } from "./settings.js";
+import { loadSettings, toLimits, STORAGE_KEY, DEV_OVERRIDE_KEY, applyDevOverride } from "./settings.js";
 import { sanitizeCalibration } from "./engine/calibration.js";
 import { loadPrefs, normalizePrefs, PREFS_KEY } from "./notification-prefs.js";
 
@@ -51,6 +51,12 @@ async function notifyTabs(type) {
   }
 }
 
+// Draw the plain cloud icon (no time) when the extension is installed or Chrome starts, until
+// the camera is running and the countdown takes over. Not done on every worker wake-up, so
+// it never wipes the countdown while the engine is running.
+chrome.runtime.onInstalled.addListener(() => clearTimerBadge());
+chrome.runtime.onStartup.addListener(() => clearTimerBadge());
+
 // Alert switches from Settings. Cached so the 5-per-second engine updates do not each
 // read storage. The service worker can restart, so the cache reloads from storage.
 let prefs = normalizePrefs(null);
@@ -62,7 +68,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   prefs = normalizePrefs(changes[PREFS_KEY].newValue);
   // Switching an alert off also takes down what is already showing.
   if (before.lighting && !prefs.lighting) {
-    clearBadge();
+    clearTimerBadge(); // the next engine update redraws it without the dark alert
     resetNotifier();
   }
   if (before.breaks && !prefs.breaks) void notifyTabs("HIDE_CLOUDS");
@@ -119,7 +125,9 @@ async function closeOffscreen() {
 // Tell the engine the user's timer limits. Offscreen pages cannot read storage.
 async function pushSettings() {
   try {
-    const limits = toLimits(await loadSettings());
+    const stored = await chrome.storage.local.get(DEV_OVERRIDE_KEY);
+    // The override is for testing only; it is empty for normal users.
+    const limits = applyDevOverride(toLimits(await loadSettings()), stored[DEV_OVERRIDE_KEY]);
     await chrome.runtime.sendMessage({ type: "ENGINE_SETTINGS", limits });
   } catch (error) {
     // Engine not ready yet; it gets the settings again on the next command.
@@ -127,7 +135,7 @@ async function pushSettings() {
 }
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
-  if (area === "local" && changes[STORAGE_KEY] && (await hasOffscreen())) pushSettings();
+  if (area === "local" && (changes[STORAGE_KEY] || changes[DEV_OVERRIDE_KEY]) && (await hasOffscreen())) pushSettings();
 });
 
 // Latest snapshot, so a page that opens later can show it immediately.
@@ -138,14 +146,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Snapshot from the offscreen engine.
     case "ENGINE_STATE": {
       lastEngineState = message.state;
-      const lighting = message.state?.lighting?.state;
-      if (message.state?.running && lighting) {
-        prefsLoaded.then(() => {
-          if (!prefs.lighting) return;
-          updateBadge(lighting);
-          maybeNotify(lighting);
-        });
-      }
+      prefsLoaded.then(() => {
+        // The toolbar icon shows the timer (or a red "!" when the room is dark).
+        renderTimerBadge(message.state, { showDark: prefs.lighting });
+        const lighting = message.state?.lighting?.state;
+        if (message.state?.running && lighting && prefs.lighting) maybeNotify(lighting);
+      });
       return false;
     }
 
@@ -159,7 +165,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
               ? await chrome.runtime.sendMessage({ type: "ENGINE_STOP" })
               : lastEngineState;
             await closeOffscreen();
-            clearBadge();
+            clearTimerBadge();
             resetNotifier();
             lastEngineState = null;
             sendResponse(stopped);
