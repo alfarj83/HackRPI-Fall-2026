@@ -163,3 +163,314 @@ button:disabled {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ===================================
+   COMPACT TRACKER WINDOW
+   =================================== */
+
+body.tracker-compact {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  background: #F4F9FD;
+  color: #294D68;
+  font-family: Arial, sans-serif;
+}
+
+/* Main container */
+.tracker-compact main {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+/* Smaller title */
+.tracker-compact h1 {
+  font-size: 20px;
+  line-height: 1.3;
+  margin: 0 0 14px;
+}
+
+/* Hide long introductory instructions */
+.tracker-compact main > p:first-of-type {
+  display: none;
+}
+
+/* Arrange buttons into two columns */
+.tracker-compact .buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Button appearance */
+.tracker-compact .buttons button {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.3;
+  border-radius: 10px;
+}
+
+/* Camera status */
+.tracker-compact #status {
+  font-size: 13px;
+  margin: 12px 0;
+  line-height: 1.4;
+}
+
+/* Timer cards stack vertically */
+.tracker-compact .timers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 12px 0;
+  max-width: none;
+}
+
+/* Timer cards */
+.tracker-compact .timer-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: #E5F0F8;
+  gap: 6px;
+}
+
+/* Timer labels */
+.tracker-compact .timer-card span {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Timer numbers */
+.tracker-compact .timer-card strong {
+  font-size: 32px;
+  color: #294D68;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Timer descriptions */
+.tracker-compact .timer-card small {
+  font-size: 11px;
+}
+
+/* Progress tracks */
+.tracker-compact .timer-track {
+  height: 8px;
+  border-radius: 20px;
+  margin-top: 4px;
+}
+
+/* Screen time progress */
+.tracker-compact #screen-progress {
+  background: #619FC9;
+}
+
+/* Looking-away progress */
+.tracker-compact #away-progress {
+  background: #46A58B;
+}
+
+
+/* ================================
+   EXPANDABLE TRACKER SECTIONS
+   ================================ */
+
+.tracker-compact .tracker-section {
+  margin-top: 12px;
+  border: 1px solid #D3E2ED;
+  border-radius: 14px;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+/* Clickable section heading */
+.tracker-compact .tracker-section summary {
+  display: block;
+  padding: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #294D68;
+  cursor: pointer;
+  list-style: none;
+}
+
+.tracker-compact .tracker-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.tracker-compact .tracker-section summary::after {
+  content: "⌄";
+  float: right;
+  font-size: 20px;
+  line-height: 16px;
+}
+
+/* Open-state arrow */
+.tracker-compact .tracker-section[open] summary::after {
+  content: "⌃";
+}
+
+/* Expanded content */
+.tracker-compact .section-content {
+  padding: 0 14px 16px;
+}
+
+/* Restore camera preview */
+.tracker-compact .tracker-section .preview {
+  display: block;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  background: #151D25;
+  overflow: hidden;
+}
+
+/* Camera canvas */
+.tracker-compact .preview canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Restore tracking diagnostics */
+.tracker-compact .tracker-section .metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: none;
+}
+
+/* Individual diagnostic cards */
+.tracker-compact .metrics > div {
+  padding: 10px;
+  border-radius: 10px;
+  background: #EDF3F9;
+  min-width: 0;
+}
+
+/* Tracking status */
+.tracker-compact .tracker-section #attention {
+  display: block;
+  font-size: 17px;
+  margin: 4px 0 12px;
+  color: #294D68;
+}
+
+/* Gaze estimate */
+.tracker-compact .tracker-section #detail {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+/* Disclaimer */
+.tracker-compact .section-content .muted {
+  font-size: 12px;
+  color: #536273;
+  line-height: 1.5;
+}
+
+/* Keep popup content scrollable */
+.tracker-compact {
+  overflow-y: auto;
+}
+
+.tracker-compact main {
+  padding-bottom: 28px;
+}
+
+
+/* CHROME EXTENSION POPUP */
+
+html {
+  overflow-x: hidden;
+}
+
+body.tracker.tracker-compact {
+  width: 400px;
+  min-width: 0;
+  max-width: 400px;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  background: #F4F9FD;
+}
+
+.tracker-compact main {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 18px;
+  box-sizing: border-box;
+}
+
+.tracker-compact h1 {
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+/* Keep everything within the popup width */
+
+.tracker-compact .buttons,
+.tracker-compact .timers,
+.tracker-compact .tracker-section {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.tracker-compact .buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tracker-compact .buttons button {
+  min-width: 0;
+  width: 100%;
+  white-space: normal;
+}
+
+.tracker-compact .timers {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* Expandable camera preview */
+
+.tracker-compact .camera-layer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #151D25;
+}
+
+.tracker-compact .camera-layer video,
+.tracker-compact .camera-layer canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Expandable diagnostic cards */
+
+.tracker-compact .metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tracker-compact .metrics > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
