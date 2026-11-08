@@ -584,3 +584,28 @@ html[data-theme="dark"] .wizard .privacy-panel { background: #1a2733; color: #cf
 .wizard .welcome-content { padding-top: 10px; }
 .wizard .timer-hero { margin-top: 8px; }
 html[data-theme="dark"] .wizard #cloud-timer-percent { color: #93aabb; }
+
+
+/* Full reset button in Settings */
+.wizard .danger-button {
+  background: #c94b55;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wizard .danger-button:hover {
+  background: #ad3542;
+}
+
+.wizard .danger-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wizard .danger-button:focus-visible {
+  outline: 3px solid #f1a6ad;
+  outline-offset: 2px;
+}
