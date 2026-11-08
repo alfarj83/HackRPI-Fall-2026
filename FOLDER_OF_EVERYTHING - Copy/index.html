@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Head in the Clouds</title>
+
+  <style>
+    body {
+      width: 420px;
+      padding: 12px;
+      font-family: Arial, sans-serif;
+    }
+
+    .preview {
+      position: relative;
+      width: 400px;
+      height: 300px;
+    }
+
+    video, canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 400px;
+      height: 300px;
+    }
+
+    video {
+      object-fit: fill;
+      transform: scaleX(-1);
+    }
+
+    canvas {
+      transform: scaleX(-1);
+      pointer-events: none;
+    }
+
+    #attention {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Head in the Clouds</h2>
+
+  <button id="start">Start Tracking</button>
+  <button id="stop" disabled>Stop Tracking</button>
+  <button id="calibrate-screen">
+    Record: Looking at screen
+  </button>
+
+  <button id="calibrate-away">
+      Record: Looking away
+  </button>
+  <button id="open-gaze">Open Eye Tracker</button>
+  <button id="request-permission">
+    Grant Camera Permission
+    </button>
+
+  <p id="status">Camera inactive</p>
+
+  <div class="preview">
+    <video id="webcam" autoplay muted playsinline></video>
+    <canvas id="overlay" width="400" height="300"></canvas>
+  </div>
+
+  <p id="attention">Attention: Unknown</p>
+
+  <script type="module" src="./popup.js"></script>
+</body>
+
+
+<div id="eye-timer">
+  <h3>Eye Break Timer ☁️</h3>
+
+  <p id="timer-display">20:00</p>
+
+  <button id="start-timer">
+    Start Timer
+  </button>
+</div>
+
+<script src="timer.js"></script>
+<script src="timer-ui.js"></script>
+
+
+</html>
