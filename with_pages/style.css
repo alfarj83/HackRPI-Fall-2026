@@ -1,0 +1,424 @@
+
+/* ===========================
+   GLOBAL
+=========================== */
+
+:root {
+  font-family: Arial, sans-serif;
+  color: #294d68;
+  background: #f4f9fd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body.tracker.tracker-compact.wizard {
+  width: 380px;
+  min-width: 380px;
+  max-width: 380px;
+  height: 540px;
+  max-height: 540px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #f4f9fd;
+  color: #294d68;
+}
+
+.wizard main {
+  width: 100%;
+  padding: 16px 20px 20px;
+}
+
+/* ===========================
+   PAGE SWITCHING
+=========================== */
+
+.wizard .app-page[hidden] {
+  display: none !important;
+}
+
+.wizard .app-page {
+  width: 100%;
+  min-height: 390px;
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.wizard .topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.wizard .brand {
+  font-size: 14px;
+  font-weight: 700;
+  color: #294d68;
+}
+
+.wizard .icon-button {
+  background: transparent;
+  color: #294d68;
+  font-size: 22px;
+  padding: 5px;
+  border: 0;
+}
+
+/* ===========================
+   TEXT
+=========================== */
+
+.wizard h1 {
+  font-size: 24px;
+  margin: 8px 0;
+  line-height: 1.3;
+}
+
+.wizard .intro {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #607c90;
+  margin: 8px 0 16px;
+}
+
+.muted {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #607c90;
+}
+
+/* ===========================
+   BUTTONS
+=========================== */
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  background: #4c9ed5;
+  color: white;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.wizard .primary {
+  background: #4c9ed5;
+  color: white;
+}
+
+.wizard .secondary {
+  background: #e2eef8;
+  color: #29516d;
+}
+
+.wizard .wide {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 9px;
+}
+
+/* ===========================
+   PAGE 1: WELCOME
+=========================== */
+
+.wizard .welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 45px;
+  text-align: center;
+}
+
+.wizard .hero-cloud {
+  width: 150px;
+  height: 150px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wizard .hero-cloud img {
+  width: 145px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.wizard .welcome-content h1 {
+  margin-top: 16px;
+}
+
+.wizard #status {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #607c90;
+}
+
+/* ===========================
+   PAGE 2: CALIBRATION
+=========================== */
+
+.wizard .preview {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #151d25;
+  margin-bottom: 12px;
+}
+
+.wizard .camera-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.wizard .camera-layer video,
+.wizard .camera-layer canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.wizard .camera-layer video {
+  display: none;
+}
+
+.wizard .camera-layer canvas {
+  display: block;
+  transform: scaleX(-1);
+  pointer-events: none;
+}
+
+.wizard .hint {
+  background: #e6f1f9;
+  color: #53738b;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+
+.wizard #calibration-message {
+  text-align: center;
+  font-size: 12px;
+  color: #607c90;
+}
+
+/* ===========================
+   PROGRESS BARS
+=========================== */
+
+.timer-track {
+  width: 100%;
+  height: 8px;
+  margin-top: 10px;
+  background: #d4dfeb;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.timer-fill {
+  width: 0%;
+  height: 100%;
+  background: #619fc9;
+  border-radius: 20px;
+  transition: width 0.1s linear;
+}
+
+#away-progress,
+.away-fill {
+  background: #46a58b;
+}
+
+/* ===========================
+   PAGE 3: CLOUD TIMER
+=========================== */
+
+.wizard .timer-hero {
+  text-align: center;
+  background: #e4f0f9;
+  border-radius: 22px;
+  padding: 20px 10px;
+  margin: 18px 0;
+}
+
+.wizard .timer-cloud {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 125px;
+}
+
+.wizard .timer-cloud img {
+  max-width: 140px;
+  max-height: 120px;
+  object-fit: contain;
+}
+
+.wizard .countdown {
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wizard .timer-caption {
+  font-size: 12px;
+  color: #67879c;
+  margin-top: 8px;
+}
+
+.wizard .break-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 20px 0 8px;
+  font-size: 13px;
+}
+
+/* ===========================
+   PAGE 4: SETTINGS
+=========================== */
+
+.wizard .buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.wizard .buttons button {
+  width: 100%;
+  min-height: 42px;
+  font-size: 12px;
+  padding: 9px;
+}
+
+.wizard .settings-card {
+  background: #e6f1f9;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 14px 0;
+}
+
+.wizard #attention {
+  font-size: 17px;
+  margin: 8px 0 0;
+}
+
+/* ===========================
+   TRACKING DIAGNOSTICS
+=========================== */
+
+.wizard .tracker-section {
+  margin-top: 12px;
+  border: 1px solid #d3e2ed;
+  border-radius: 12px;
+  background: white;
+  overflow: hidden;
+}
+
+.wizard .tracker-section summary {
+  display: block;
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.wizard .tracker-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.wizard .tracker-section summary::after {
+  content: "⌄";
+  float: right;
+  font-size: 18px;
+}
+
+.wizard .tracker-section[open] summary::after {
+  content: "⌃";
+}
+
+.wizard .section-content {
+  padding: 0 12px 14px;
+}
+
+.wizard .metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.wizard .metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: #edf3f9;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.wizard .metrics strong {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wizard .metrics span {
+  font-size: 11px;
+  color: #516070;
+}
+
+.wizard #detail {
+  margin-top: 12px;
+  font-size: 12px;
+}
+
+/* ===========================
+   BOTTOM NAVIGATION
+=========================== */
+
+.wizard .bottom-nav {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  border-top: 1px solid #d7e7f0;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.wizard .bottom-nav button {
+  background: transparent;
+  color: #718ca0;
+  border-radius: 8px;
+  padding: 10px 3px;
+  font-size: 11px;
+}
+
+.wizard .bottom-nav button.active {
+  background: #e0eef9;
+  color: #1b6494;
+  font-weight: 700;
+}
