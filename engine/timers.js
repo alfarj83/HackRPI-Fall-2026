@@ -3,8 +3,9 @@
 //
 //  - While not on a break, "likely-screen" adds to screenTime. Reaching screenLimit
 //    starts a break.
-//  - On a break, "likely-away" adds to awayTime. Reaching awayLimit ends the break and
-//    resets both clocks.
+//  - On a break, "likely-away" OR a fresh "unknown" prediction adds to awayTime.
+//    Unknown includes blinks, missing iris landmarks and lost face meshes.
+//    Reaching awayLimit ends the break and resets both clocks.
 //  - Only fresh predictions count (a stale classifier never advances a clock).
 export const SCREEN_LIMIT = 20 * 60 * 1000;
 export const AWAY_LIMIT = 20 * 1000;
@@ -53,7 +54,9 @@ export class AttentionTimers {
     if (!fresh) return null;
 
     if (this.onBreak) {
-      if (this.state === "likely-away") {
+      // Unknown counts as looking away ONLY during breaks, not during screen time.
+      // Calibrating and uncertain predictions still pause the timer.
+      if (this.state === "likely-away" || this.state === "unknown") {
         this.awayTime = Math.min(this.awayLimit, this.awayTime + delta);
         if (this.awayTime >= this.awayLimit) {
           this.onBreak = false;

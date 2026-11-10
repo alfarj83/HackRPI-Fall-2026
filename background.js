@@ -51,6 +51,29 @@ async function notifyTabs(type) {
   }
 }
 
+// Send only relevant gaze/break changes to webpage warning overlays.
+// The overlay can also request an initial snapshot when a tab loads.
+let lastLookAwaySignature = null;
+function broadcastLookAwayState(state) {
+  const payload = {
+    type: 'HEADCLOUD_LOOK_AWAY_STATE',
+    state: {
+      running: state?.running === true,
+      timers: { onBreak: state?.timers?.onBreak === true },
+      attention: { state: state?.attention?.state || 'unknown' }
+    }
+  };
+  const signature = JSON.stringify(payload.state);
+  if (signature === lastLookAwaySignature) return;
+  lastLookAwaySignature = signature;
+  void chrome.tabs.query({}).then(tabs => {
+    for (const tab of tabs) {
+      if (!tab.id || !/^https?:\/\//.test(tab.url || '')) continue;
+      void chrome.tabs.sendMessage(tab.id, payload).catch(() => {});
+    }
+  }).catch(error => console.warn('Look-away overlay broadcast failed:', error));
+}
+
 // Draw the plain cloud icon (no time) when the extension is installed or Chrome starts, until
 // the camera is running and the countdown takes over. Not done on every worker wake-up, so
 // it never wipes the countdown while the engine is running.
@@ -181,6 +204,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // Snapshot from the offscreen engine.
     case "ENGINE_STATE": {
       lastEngineState = message.state;
+      broadcastLookAwayState(message.state);
       if (calibrationTabId !== null) {
         const targetTab = calibrationTabId;
         chrome.tabs.sendMessage(targetTab, { type: 'HEADCLOUD_ENGINE_STATE', state: message.state })
@@ -208,6 +232,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             clearTimerBadge();
             resetNotifier();
             lastEngineState = null;
+            broadcastLookAwayState(null);
             sendResponse(stopped);
             return;
           }

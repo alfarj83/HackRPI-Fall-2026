@@ -252,8 +252,8 @@ function renderTimers() {
   }
   // Distinguish a stalled timer from a classifier that has not identified screen gaze.
   // Do not count uncertain/no-face periods as screen time.
-  const attention = state?.attention || {};
-  const gazeState = attention.state || 'unknown';
+  //const attention = state?.attention || {};
+  //const gazeState = attention.state || 'unknown';
   // const gazeLabels = {
   //   'likely-screen': 'Looking at screen — countdown running',
   //   'likely-away': onBreak ? 'Looking away — break countdown running' : 'Looking away — screen countdown paused',
@@ -266,15 +266,15 @@ function renderTimers() {
   // if (gazeStatus) setText(gazeStatus, off
   //   ? 'Camera off — countdown paused'
   //   : (gazeLabels[gazeState] || `Tracking: ${gazeState}`));
-  const gazeDetail = $('timer-attention-detail');
-  if (gazeDetail) {
-    const reason = typeof attention.reason === 'string' ? attention.reason.trim() : '';
-    setText(gazeDetail, off
-      ? 'Start the camera to resume screen-viewing detection.'
-      : gazeState === 'likely-screen'
-        ? 'Only confirmed screen-viewing time is counted. The display updates once per second.'
-        : reason || 'Face the camera and look normally at your screen. If this persists, recalibrate.');
-  }
+  // const gazeDetail = $('timer-attention-detail');
+  // if (gazeDetail) {
+  //   const reason = typeof attention.reason === 'string' ? attention.reason.trim() : '';
+  //   setText(gazeDetail, off
+  //     ? 'Start the camera to resume screen-viewing detection.'
+  //     : gazeState === 'likely-screen'
+  //       ? 'Only confirmed screen-viewing time is counted. The display updates once per second.'
+  //       : reason || 'Face the camera and look normally at your screen. If this persists, recalibrate.');
+  // }
 
   const calibrateButton = $("timer-calibrate");
   if (calibrateButton) {
