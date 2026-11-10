@@ -462,6 +462,8 @@ $('cancel-calibration').addEventListener('click', async () => {
   }
 });
 
+// The gear uses the same in-page navigation as the Settings tab.
+$('settings-nav').addEventListener('click', () => showPage('settings'));
 $('home-nav').addEventListener('click', () => showPage(homePage()));
 $('info-nav').addEventListener('click', event => {
   event.stopPropagation();
